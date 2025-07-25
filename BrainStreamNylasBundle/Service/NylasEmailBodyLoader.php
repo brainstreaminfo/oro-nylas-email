@@ -16,6 +16,8 @@ use Oro\Bundle\EmailBundle\Entity\EmailFolder;
 use Oro\Bundle\EmailBundle\Entity\EmailOrigin;
 use Oro\Bundle\EmailBundle\Exception\EmailBodyNotFoundException;
 use Oro\Bundle\EmailBundle\Provider\EmailBodyLoaderInterface;
+use Doctrine\ORM\EntityManagerInterface;
+
 
 class NylasEmailBodyLoader implements EmailBodyLoaderInterface
 {
@@ -52,7 +54,7 @@ class NylasEmailBodyLoader implements EmailBodyLoaderInterface
      * @param EntityManager $em
      * @return EmailBody|void
      */
-    public function loadEmailBody(EmailFolder $folder, Email $email, EntityManager $em)
+    public function loadEmailBody(EmailFolder $folder, Email $email, EntityManagerInterface $em): EmailBody
     {
         /** @var NylasEmailOrigin $origin */
         $origin = $folder->getOrigin();
