@@ -1,0 +1,8 @@
+config:
+  paths:
+    'globalscript': 'BrainStreamNylasBundle/js/global-script'
+  shim:
+    'globalscript': {
+      deps: ['jquery'],
+      exports: 'globalscript'
+    }

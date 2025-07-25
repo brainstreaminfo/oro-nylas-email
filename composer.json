@@ -1,0 +1,25 @@
+{
+  "name": "brainstream/nylas-email-bundle",
+  "description": "Nylas Email Integration for OroCRM",
+  "keywords": ["orocrm", "nylas", "email", "integration"],
+  "type": "oro-bundle",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Brainstream Tech",
+      "email": "anand.dattani@brainstream.tech"
+    }
+  ],
+  "require": {
+    "php": ">=8.0",
+    "oro/platform": "^6.1",
+    "brainstream/nylas-php": "dev-master"
+  },
+  "autoload": {
+    "psr-4": {
+      "BrainStream\\Bundle\\NylasBundle\\": "BrainStreamNylasBundle/"
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
+}

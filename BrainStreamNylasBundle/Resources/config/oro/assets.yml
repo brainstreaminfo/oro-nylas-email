@@ -1,0 +1,4 @@
+css:
+    inputs:
+        - "bundles/brainstreamnylas/css/nylas-email.css"
+    output: "bundles/brainstreamnylas/css/nylas-email.css"

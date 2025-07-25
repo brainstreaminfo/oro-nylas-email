@@ -1,0 +1,203 @@
+{% extends '@OroUI/Default/index.html.twig' %}
+
+{% block pageTitle %}Nylas Email Sync{% endblock %}
+
+{% block content %}
+    <div class="nylas-container">
+        <div class="header-container">
+            <div>
+                <h4 class="header-title">Nylas Email Sync</h4>
+                <p class="lead">Manage your email accounts and sync folders with Nylas.</p>
+            </div>
+            {% if emailOrigins %}
+                <div class="text-right">
+                    <a href="{{ path('nylas_auth') }}" class="btn btn-primary">
+                        <i class="fa fa-plus"></i> Connect New Account
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+
+        {% for flashMessage in app.session.flashbag.get('token_saved') %}
+            <div class="alert alert-success flash-message">{{ flashMessage }}</div>
+        {% endfor %}
+
+        {% for flashMessage in app.session.flashbag.get('success') %}
+            <div class="alert alert-success flash-message">{{ flashMessage }}</div>
+        {% endfor %}
+
+        {% for flashMessage in app.session.flashbag.get('error') %}
+            <div class="alert alert-danger flash-message">{{ flashMessage }}</div>
+        {% endfor %}
+
+        <div class="container-fluid section-margin nylas-content">
+
+            {% if emailOrigins is empty %}
+                <div class="container-fluid section-margin text-center">
+                    <h5>{{ 'extension.title' | trans }}</h5>
+                    <p class="lead">Please connect your email account to sync folders with Nylas.</p>
+                    <a href="{{ path('nylas_auth') }}" class="btn btn-primary">
+                        Connect New Email Account
+                    </a>
+                </div>
+            {% else %}
+                <h5>Connected Email Accounts</h5>
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered table-shadow">
+                        <thead>
+                        <tr>
+                            <th scope="col">Email Address</th>
+                            <th scope="col" class="text-center">Default Account</th>
+                            <th scope="col" class="text-center">Actions</th>
+                            <th scope="col" class="text-center">Status</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for emailOrigin in emailOrigins %}
+                            <tr>
+                                <td>{{ emailOrigin.email }}</td>
+                                <td class="text-center">
+                                    {% if emailOrigin.isDefault %}
+                                        <span class="badge badge-success">Yes</span>
+                                    {% else %}
+                                        <span class="badge badge-secondary">No</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if not emailOrigin.isDefault %}
+                                        <form action="{{ path('nylas_set_default_account', {'id': emailOrigin.id}) }}"
+                                            method="post" style="display: inline;">
+                                            <input type="hidden" name="_csrf_token"
+                                                value="{{ csrf_token('set_default_account') }}">
+                                            <button type="submit" class="btn btn-primary btn-sm">
+                                                Mark as Default
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <button class="btn btn-primary btn-sm btn-disabled" disabled aria-disabled="true">
+                                            Default Account
+                                        </button>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {# {% if emailOrigin.activeStatus == false %} #}
+                                        <form action="{{ path('nylas_set_account_status', {'id': emailOrigin.id, 'status': emailOrigin.activeStatus ? 'false' : 'true' }) }}"
+                                            method="post" style="display: inline;">
+                                            <input type="hidden" name="_csrf_token"
+                                                value="{{ csrf_token('set_account_status') }}">
+                                            <button type="submit" class="btn {{ emailOrigin.activeStatus ? 'btn-success' : 'btn-danger' }} btn-sm">
+                                                {% if emailOrigin.activeStatus %}Active{% else %}Deactive{% endif %}
+                                            </button>
+                                        </form>
+                                    {# {% else %}
+                                        <button class="btn btn-primary btn-sm btn-disabled" disabled aria-disabled="true">
+                                            Default Account
+                                        </button>
+                                    {% endif %} #}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+            <div class="row mt-5">
+                {# <div class="select-email-section"> #}
+                {% set activeEmailOrigins = emailOrigins|filter(emailOrigin => emailOrigin.activeStatus|length != 0 and emailOrigin.activeStatus != false) %}
+                    <div class="form-group">
+                        <h5 for="emailOriginSelect">Select Email Account:</h5>
+                        <select class="span12" id="emailOriginSelect"
+                                onchange="window.location.href='{{ url('nylas_email_folder_list', {'id': ''}) }}/'.concat(this.value, '?_t=', Date.now())"
+                                style="max-width: 500px;">
+
+                            {% if activeEmailOrigins is empty %}
+                                <option selected>No Active Account Found</option>
+                            {% else %}
+                                {% for emailOrigin in activeEmailOrigins %}
+                                    <option value="{{ emailOrigin.id }}" {% if emailOrigin.id == selectedEmailOriginId %}selected{% endif %}>
+                                        {{ emailOrigin.email }} {% if emailOrigin.isDefault %}(Default){% endif %}
+                                    </option>
+                                {% endfor %}
+                            {% endif %}
+
+                        </select>
+                    </div>
+                {# </div> #}
+                <div class="ml-4">
+                    {% if emailFolders is not empty %}
+                        <div class="container-fluid section-margin">
+                            <h5>Mailbox Folders: {{ email }}</h5>
+                            {% for flashMessage in app.session.flashbag.get('success') %}
+                                <div class="alert alert-success flash-message">{{ flashMessage }}</div>
+                            {% endfor %}
+                            <form method="post" action="{{ path('nylas_email_folder_list', {'id': selectedEmailOriginId}) }}">
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token('nylas_folder_sync') }}">
+                                <div id="folder-tree" class="folder-tree">
+                                    <ul class="list-unstyled">
+                                        {% for folder in emailFolders %}
+                                            <li class="folder-item">
+                                                <label class="folder-label">
+                                                    <input type="checkbox" name="folders[]" value="{{ folder.folderUid }}"
+                                                        id="folder-{{ folder.id }}"
+                                                            {{ folder.syncEnabled ? 'checked' : '' }}>
+                                                    <span>{{ folder.name }}</span>
+                                                </label>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                <button type="submit" class="btn btn-primary mt-3">
+                                    Save Sync Preferences
+                                </button>
+                            </form>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            No folders available for the selected email account.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {# no ajax:asd #}
+{#<script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                            document.querySelector('form[data-noajax="true"]').addEventListener('submit', function(event) {
+                                    event.stopPropagation();
+                                });
+                        });
+            </script>#}
+            <!-- Existing content -->
+{#            <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>#}
+
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    //console.log('Document loaded...........................');
+                    const select = document.getElementById('emailOriginSelect');
+                    if (select) {
+                        //console.log('Selected ID on load: ', select.value);
+                        select.setAttribute('onchange', null); // Remove inline onchange
+                        select.addEventListener('change', function() {
+                            const newId = this.value;
+                            //console.log('Changed to ID: ', newId);
+                            const newUrl = '/nylas/folderList/' + newId + '?_t=' + new Date().getTime();
+                            //console.log('Redirecting to: ', newUrl);
+                            window.location.href = newUrl;
+                        });
+                    } else {
+                        console.error('emailOriginSelect not found');
+                    }
+
+                    const urlParams = new URLSearchParams(window.location.search);
+                    if (urlParams.get('new_account') === '1') {
+                        const checkboxes = document.querySelectorAll('input[id^="folder-"]');
+                        checkboxes.forEach(checkbox => {
+                            checkbox.checked = false;
+                            console.log('Unchecked checkbox for folder ID: ', checkbox.value);
+                        });
+                    }
+                });
+            </script>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,16 @@
+navigation:
+  menu_config:
+    items:
+      nylas_folder_list:
+        label: "Nylas Email Sync"
+        route: "nylas_email_folder_list"
+        extras:
+          position: 13
+          routes: ["nylas_email_folder_list"]
+          description: "Access Nylas folder list setup"
+          isEnabled: true
+
+    tree:
+      usermenu:
+        children:
+          nylas_folder_list:

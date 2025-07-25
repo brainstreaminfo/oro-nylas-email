@@ -1,0 +1,33 @@
+{% extends '@OroEmail/Form/fields.html.twig' %}
+{#  Used to hide mailboxes list and add mail box button in https://oronylasext.local/config/system/platform/email_configuration #}
+{% block oro_email_mailbox_grid_widget %}
+    {# Hide mailbox grid in configuration for Nylas bundle #}
+
+    <script>
+        (function() {
+            //var $ = window.jQuery;
+            var $ = window.jQuery || $;
+            if (typeof $ !== "function") {
+                console.log("jQuery is not loaded");
+                return;
+            }
+
+            function hideSystemMailboxesSection() {
+                $('fieldset.form-horizontal.form-horizontal-large').each(function() {
+                    var $fieldset = $(this);
+                    var $heading = $fieldset.find('h5.user-fieldset > span');
+                    if ($heading.length && $heading.text().trim() === "System Mailboxes") {
+                        $fieldset.hide();
+                    }
+                });
+            }
+            $(document).ready(hideSystemMailboxesSection);
+            $(document).on('DOMSubtreeModified', hideSystemMailboxesSection);
+        })();
+    </script>
+
+  {% endblock %}
+
+{% block oro_email_mailbox_grid_label %}
+    {# Hide Add mailbox button #}
+{% endblock %}

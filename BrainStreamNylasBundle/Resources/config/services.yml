@@ -1,0 +1,202 @@
+parameters:
+  brainstream_nylas.email_before_sync_interval: 5
+
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: true
+
+  BrainStream\Bundle\NylasBundle\EventListener\EmailUserListener:
+    tags:
+      - { name: doctrine.event_listener, event: postPersist }
+
+  BrainStream\Bundle\NylasBundle\Controller\EmailController:
+    parent: Oro\Bundle\EmailBundle\Controller\EmailController
+    public: true
+    autoconfigure: true
+    autowire: true
+    calls:
+      - ["setContainer", ["@service_container"]]
+    tags:
+      - { name: controller.service_arguments }
+      - { name: container.service_subscriber }
+      - {
+          name: container.service_subscriber,
+          id: oro_entity_config.provider.attachment,
+        }
+      - {
+          name: container.service_subscriber,
+          id: oro_email.form.handler.email,
+          key: Oro\Bundle\EmailBundle\Form\Handler\EmailHandler,
+        }
+      - {
+          name: container.service_subscriber,
+          id: oro_email.provider.smtp_settings,
+          key: Oro\Bundle\EmailBundle\Provider\SmtpSettingsProviderInterface,
+        }
+      - {
+          name: container.service_subscriber,
+          id: oro_imap.email_attachment_loader,
+          key: Oro\Bundle\ImapBundle\Provider\ImapEmailAttachmentLoader,
+        }
+
+  BrainStream\Bundle\NylasBundle\Command\Cron\EmailSyncCommand:
+    autowire: true
+    tags:
+      - { name: console.command }
+      - { name: oro.cron.command }
+
+  BrainStream\Bundle\NylasBundle\Sync\NylasEmailSynchronizer:
+    arguments:
+      - "@doctrine"
+      - "@oro_email.known_email_address_checker_factory"
+      - "@oro_email.email_notification_alert_manager"
+      - '@BrainStream\Bundle\NylasBundle\Service\NylasClient'
+      - "@oro_email.email.entity.builder"
+      - '@BrainStream\Bundle\NylasBundle\Manager\NylasEmailRemoveManager'
+      - '@BrainStream\Bundle\NylasBundle\Manager\NylasEmailManager'
+      - "%brainstream_nylas.email_before_sync_interval%"
+      - "@oro_email.activity_list.provider"
+      - "@oro_activity.manager"
+      - "@oro_locale.settings"
+    calls:
+      - [setTokenStorage, ["@security.token_storage"]]
+
+  BrainStream\Bundle\NylasBundle\Sync\NylasEmailSynchronizationProcessor:
+    arguments:
+      - "@doctrine"
+      - "@oro_email.email.entity.builder"
+      - "@oro_email.known_email_address_checker_factory"
+      - '@BrainStream\Bundle\NylasBundle\Manager\NylasEmailRemoveManager'
+      - '@BrainStream\Bundle\NylasBundle\Service\NylasClient'
+      - '@BrainStream\Bundle\NylasBundle\Manager\NylasEmailManager'
+      - "%brainstream_nylas.email_before_sync_interval%"
+      - "@oro_email.activity_list.provider"
+      - "@oro_activity.manager"
+
+  BrainStream\Bundle\NylasBundle\Service\ConfigService:
+    tags:
+      - { name: nylas.config }
+
+  #define alias
+  brainstream.nylas_api_service:
+    class: BrainStream\Bundle\NylasBundle\Service\NylasApiService
+
+  BrainStream\Bundle\NylasBundle\Service\NylasApiService: "@brainstream.nylas_api_service"
+
+  BrainStream\Bundle\NylasBundle\Controller\FrontController:
+    tags: ["controller.service_arguments"]
+
+  BrainStream\Bundle\NylasBundle\Form\Type\ConfigurationNylasType:
+    tags:
+      - { name: form.type, alias: oro_configuration_nylas }
+
+  Oro\Bundle\EmailBundle\Provider\RelatedEmailsProvider:
+    alias: oro_email.related_emails.provider
+
+  Oro\Bundle\EmailBundle\Builder\Helper\EmailModelBuilderHelper:
+    alias: oro_email.email.model.builder.helper
+
+  Oro\Bundle\EmailBundle\Tools\EmailOriginHelper:
+    alias: oro_email.tools.email_origin_helper
+
+  BrainStream\Bundle\NylasBundle\Form\Type\NylasEmailOriginFromType:
+    tags:
+      - { name: form.type, alias: oro_email_email_origin_from }
+
+  BrainStream\Bundle\NylasBundle\Service\NylasClient:
+    arguments:
+      - "%kernel.debug%"
+      - "%kernel.logs_dir%"
+      - '@BrainStream\Bundle\NylasBundle\Service\ConfigService'
+      - "@form.factory"
+      - "%kernel.project_dir%/../web/uploads/"
+      - "@doctrine.orm.entity_manager"
+      - "@logger"
+
+  BrainStream\Bundle\NylasBundle\Manager\NylasEmailManager:
+    arguments:
+      - '@BrainStream\Bundle\NylasBundle\Service\NylasClient'
+      - "@oro_email.email.entity.builder"
+      - "@doctrine.orm.entity_manager"
+
+  BrainStream\Bundle\NylasBundle\Manager\NylasEmailRemoveManager:
+    arguments:
+      - "@doctrine"
+
+  BrainStream\Bundle\NylasBundle\Service\NylasEmailBodyLoader:
+    arguments:
+      - '@BrainStream\Bundle\NylasBundle\Service\NylasClient'
+      - "@oro_config.manager"
+      - "@oro_email.email.entity.builder"
+    tags:
+      - { name: oro_email.email_body_loader, priority: 100 }
+
+  BrainStream\Bundle\NylasBundle\Sender\NylasEmailProcessor:
+    decorates: "oro_email.sender.email_model_sender" #Oro\Bundle\EmailBundle\Sender\EmailModelSender
+    arguments:
+      - "@oro_email.mailer"
+      - "@oro_email.embedded_images.handler.email_model"
+      - "@oro_email.sender.email_factory"
+      - "@oro_email.builder.email_user_from_email_model_builder"
+      - "@event_dispatcher"
+      - "@oro_email.listener.entity_listener"
+      - "@oro_email.email.address.helper"
+      - "@oro_email.email.entity.builder"
+      - "@oro_email.email.activity.manager"
+      - "@oro_email.tools.email_origin_helper"
+      - '@BrainStream\Bundle\NylasBundle\Service\NylasClient'
+      - "@translator"
+      - "@doctrine.orm.entity_manager"
+      - "@logger"
+
+  BrainStream\Bundle\NylasBundle\Tools\EmailOriginHelper:
+    arguments:
+      - "@oro_entity.doctrine_helper"
+      - "@oro_security.token_accessor"
+      - "@oro_email.email.owner.provider"
+      - "@oro_email.email.address.helper"
+
+  BrainStream\Bundle\NylasBundle\EventListener\ReplaceEmbeddedAttachmentsListener:
+    tags:
+      - {
+          name: kernel.event_listener,
+          event: oro_email.email_body_loaded,
+          method: replace,
+        }
+
+  BrainStream\Bundle\NylasBundle\EventListener\NylasEmailOriginListener:
+    arguments:
+      - "@logger"
+    tags:
+      - { name: doctrine.event_listener, event: postPersist }
+
+  oro_email.mailbox_choice_list: # Override the default service ID
+    class: BrainStream\Bundle\NylasBundle\Datagrid\MailboxChoiceList
+    public: true
+    arguments:
+      - "@oro_security.token_accessor"
+      - "@oro_email.mailbox.manager"
+      - "@oro_email.email_grid_mailbox_name_helper"
+
+  #BrainStream\Bundle\NylasBundle\Form\Type\EmailOriginFromType:
+  #  decorates: oro_email.form.type.email_origin_from
+  #  tags:
+  #    - { name: form.type }
+
+  BrainStream\Bundle\NylasBundle\Form\Extension\EmailTypeExtension:
+    arguments:
+      - "@doctrine.orm.entity_manager"
+    tags:
+      - { name: form.type_extension }
+
+  BrainStream\Bundle\NylasBundle\EventListener\EmailConfigFormThemeListener:
+    arguments:
+      - "@twig"
+    tags:
+      - {
+          name: kernel.event_listener,
+          event: kernel.view,
+          method: onKernelView,
+        }

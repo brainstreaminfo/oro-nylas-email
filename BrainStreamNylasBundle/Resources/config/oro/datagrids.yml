@@ -1,0 +1,91 @@
+datagrids:
+  custom-mailboxes-grid:
+    source:
+      type: orm
+      skip_acl_apply: true
+      query:
+        select:
+          - m.id
+          - m.email
+          - m.label
+          - m.createdAt
+          - m.updatedAt
+          - m.processSettings
+          - m.origin
+        from:
+          - { table: Oro\Bundle\EmailBundle\Entity\Mailbox, alias: m }
+        join:
+          left:
+            - { join: m.processSettings, alias: process }
+            - { join: m.origin, alias: o }
+        where:
+          and:
+            - m.organization IN(:organizations)
+            - o INSTANCE OF Oro\Bundle\EmailBundle\Entity\EmailOrigin
+            - o NOT INSTANCE OF BrainStream\Bundle\NylasBundle\Entity\NylasEmailOrigin
+      parameters:
+        organizations:
+          type: array
+          value: $security.context.organization_ids
+    columns:
+      email:
+        label: oro.email.mailbox.email.label
+      label:
+        label: oro.email.mailbox.label.label
+      imap:
+        label: oro.imap.configuration.use_imap.label
+        type: twig
+        frontend_type: html
+        data_name: origin
+        template: '@OroEmail/Mailbox/Datagrid/Property/origin.html.twig'
+      smtp:
+        label: oro.imap.configuration.use_smtp.label
+        type: twig
+        frontend_type: html
+        data_name: origin
+        template: '@OroEmail/Mailbox/Datagrid/Property/originSmtp.html.twig'
+      processing:
+        data_name: processSettings
+        type: twig
+        label: oro.email.mailbox.process.label
+        frontend_type: html
+        template: '@OroEmail/Mailbox/Datagrid/Property/processSettings.html.twig'
+    properties:
+      id: ~
+      update_link:
+        type: url
+        route: oro_email_mailbox_update
+        params:
+          id: id
+      delete_link:
+        type: url
+        route: oro_email_mailbox_delete
+        params:
+          id: id
+    options:
+      toolbarOptions:
+        hide: true
+    actions:
+      update:
+        type: navigate
+        label: oro.grid.action.update
+        link: update_link
+        icon: pencil-square-o
+        rowAction: true
+      delete:
+        type: delete
+        label: oro.grid.action.delete
+        icon: trash-o
+        link: delete_link
+  email-grid:
+    filters:
+      columns:
+        mailbox:
+          label: oro.email.mailbox.entity_label
+          data_name: f.origin
+          type: choice
+          options:
+            field_options:
+              required: false
+              choices: "@oro_email.mailbox_choice_list->getChoiceList"
+              translatable_options: false

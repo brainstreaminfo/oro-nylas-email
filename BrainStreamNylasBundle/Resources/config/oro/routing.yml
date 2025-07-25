@@ -1,0 +1,5 @@
+#ref:adbrain added on 07-03-2025
+brainstream_nylas_routes:
+  resource: '@BrainStreamNylasBundle/Controller/'
+  type: attribute
+  prefix: /

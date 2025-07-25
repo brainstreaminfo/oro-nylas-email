@@ -1,0 +1,2 @@
+bundles:
+    - { name: BrainStream\Bundle\NylasBundle\BrainStreamNylasBundle, priority: 255 }

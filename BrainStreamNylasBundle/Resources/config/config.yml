@@ -1,0 +1,3 @@
+twig:
+  form_themes:
+    - '@BrainStreamNylas/Form/fields.html.twig'

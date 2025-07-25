@@ -1,0 +1,78 @@
+# Dependencies
+/vendor/
+
+# Development environment
+/.idea/
+/.vscode/
+/.history/
+
+# Build and cache
+/var/
+/build/
+/coverage/
+
+# Environment files
+/.env
+/.env.*
+!.env.dist
+/.env.local
+/.env.*.local
+
+# Logs
+/*.log
+/logs/
+!logs/.gitkeep
+
+# System Files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.~*
+
+# IDE specific files
+.idea
+*.sublime-workspace
+*.sublime-project
+
+# Local configuration
+/config/parameters.yml
+/config/parameters_*.yml
+!/config/parameters.yml.dist
+
+# Cache and logs (Symfony)
+/var/cache/*
+/var/logs/*
+!var/cache/.gitkeep
+!var/logs/.gitkeep
+!var/SymfonyRequirements.php
+
+# PHPUnit
+/.phpunit/
+/phpunit.xml
+/phpunit.xml.dist
+/.phpunit.result.cache
+
+# Composer
+/composer.phar
+/composer.lock
+
+# Local development
+/.php_cs.cache
+/.php_cs.dist
+/.php_cs
+/.phpcs-cache
+/.phpcs.xml
+/.phpcs.xml.dist
+/.phpcsignore
+/.phpcs-cache/
+
+# IDE
+.vscode
+*.sublime-*
+._*
+.Spotlight-V100
+.Trashes
+
+
