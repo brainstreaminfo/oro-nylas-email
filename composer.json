@@ -1,5 +1,5 @@
 {
-  "name": "brainstream/nylas-email-bundle",
+  "name": "brainstreaminfo/oro-nylas-email",
   "description": "Nylas Email Integration for OroCRM",
   "keywords": ["orocrm", "nylas", "email", "integration"],
   "type": "oro-bundle",
