@@ -5,4 +5,4 @@ design:
         - name: default
           parent: default
           assets:
-            - '@BrainStreamNylasBundle/Resources/public/js/global-script.js'
+            - '@BrainStreamNylasBundle/Resources/public/js/folder_list.js'

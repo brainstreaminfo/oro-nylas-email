@@ -1,8 +1,8 @@
 config:
   paths:
-    'globalscript': 'BrainStreamNylasBundle/js/global-script'
+    'brainstreamnylas/folder_list': 'BrainStreamNylasBundle/js/folder_list'
   shim:
-    'globalscript': {
+    'brainstreamnylas/folder_list': {
       deps: ['jquery'],
-      exports: 'globalscript'
+      exports: 'folderList'
     }

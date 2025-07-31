@@ -27,3 +27,146 @@
 .row{
     display: flex;
 }
+
+.status-toggle {
+    width: 50px !important; /* Increased width for better usability */
+    height: 24px !important; /* Increased height for better usability */
+    appearance: none;
+    background: #ccc;
+    border-radius: 50px; /* More rounded edges */
+    position: relative;
+    outline: none;
+    cursor: pointer;
+    transition: background 0.3s;
+    border: 2px solid transparent; /* Added border for better visibility */
+}
+.status-toggle:checked {
+    background: #355477; /* Green color when checked */
+    border: 2px solid #355477; /* Border color matches the background */
+}
+.status-toggle::before {
+    content: '';
+    width: 18px; /* Increased size for better visibility */
+    height: 17px; /* Increased size for better visibility */
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px; /* Adjusted for better centering */
+    left: 2px; /* Adjusted for better centering */
+    transition: transform 0.3s;
+    opacity: 1;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Added shadow for depth */
+}
+.status-toggle:checked::before {
+    transform: translateX(26px); /* Adjusted for new width */
+}
+
+
+/* nylas folder list dropdown css start  */
+.nylas-dropdown-new {
+    position: relative;
+    font-size: 14px;
+    color: #333;
+}
+.nylas-dropdown-label {
+    display: block;
+    height: 32px;
+    background: #fff;
+    border: 1px solid #9da5b6;
+    padding: 8px 12px;
+    line-height: 1;
+    cursor: pointer;
+    position: relative;
+    border-radius: 4px;
+}
+
+.nylas-dropdown-label:after {
+    content: "▼";
+    float: right;
+    transition: transform 0.3s ease;
+}
+
+.nylas-dropdown-new.open .nylas-dropdown-label:after {
+    content: "▲";
+    transform: rotate(180deg);
+}
+
+.nylas-dropdown-list {
+    padding: 12px;
+    background: #fff;
+    top: 32px;
+    left: 0;
+    right: 0;
+    box-shadow: 0 1px 2px 1px rgba(0, 0, 0, 0.15);
+    max-height: 250px;
+    overflow-y: auto;
+    display: none;
+    z-index: 1000;
+    border: 1px solid #ccc;
+    border-top: none;
+}
+
+.nylas-dropdown-new.open .nylas-dropdown-list {
+    display: block;
+}
+
+.nylas-dropdown-option {
+    display: block;
+    padding: 6px 10px;
+    border-radius: 3px;
+    transition: background-color 0.2s ease;
+}
+
+.nylas-dropdown-option:hover {
+    background-color: #f5f5f5;
+}
+
+.nylas-dropdown-search {
+    margin-bottom: 8px;
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 10;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.folder-search-input {
+    width: 100% !important;
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 13px;
+    outline: none;
+}
+
+.folder-search-input:focus {
+    border-color: #355477;
+    box-shadow: 0 0 0 2px rgba(55, 153, 55, 0.2);
+}
+
+.nylas-dropdown-new [type="checkbox"] {
+    margin-right: 8px;
+    transform: scale(1.1);
+}
+
+.check-all-option {
+    font-weight: bold;
+    color: #355477;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+}
+
+.check-all-option:hover {
+    background-color: #f0f8f0;
+}
+
+.no-results {
+    padding: 12px;
+    text-align: center;
+    color: #999;
+    font-style: italic;
+}
+
+/* nylas folder list dropdown css end */

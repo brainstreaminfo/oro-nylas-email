@@ -13,6 +13,8 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Psr\Log\LoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
+
 
 class FrontController extends AbstractController
 {
@@ -318,14 +320,22 @@ class FrontController extends AbstractController
         methods: ["POST"],
         requirements: ['id' => '\d+']
     )]
-    public function setAccountStatusAction(Request $request, int $id, string $status): RedirectResponse
+    public function setAccountStatusAction(Request $request, int $id, string $status): JsonResponse
     {
         try {
-            $result = $this->nylasApiService->setAccountStatus($id, $status);
-            $this->addFlash('success', 'Account status updated successfully.');
+            $this->nylasApiService->setAccountStatus($id, $status);
+
+            return new JsonResponse([
+                'success' => true,
+                'message' => 'Account status updated successfully.',
+                'id' => $id,
+                'status' => $status
+            ]);
         } catch (\Exception $e) {
-            $this->addFlash('error', 'Failed to set status for account: ' . $e->getMessage());
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Failed to set status: ' . $e->getMessage()
+            ], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
         }
-        return $this->redirectToRoute('nylas_email_folder_list', ['id' => $id], Response::HTTP_SEE_OTHER);
     }
 }

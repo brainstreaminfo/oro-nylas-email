@@ -17,18 +17,19 @@
                 </div>
             {% endif %}
         </div>
+        <div id="status-message">
+            {% for flashMessage in app.session.flashbag.get('token_saved') %}
+                <div class="alert alert-success flash-message">{{ flashMessage }}</div>
+            {% endfor %}
 
-        {% for flashMessage in app.session.flashbag.get('token_saved') %}
-            <div class="alert alert-success flash-message">{{ flashMessage }}</div>
-        {% endfor %}
+            {% for flashMessage in app.session.flashbag.get('success') %}
+                <div class="alert alert-success flash-message">{{ flashMessage }}</div>
+            {% endfor %}
 
-        {% for flashMessage in app.session.flashbag.get('success') %}
-            <div class="alert alert-success flash-message">{{ flashMessage }}</div>
-        {% endfor %}
-
-        {% for flashMessage in app.session.flashbag.get('error') %}
-            <div class="alert alert-danger flash-message">{{ flashMessage }}</div>
-        {% endfor %}
+            {% for flashMessage in app.session.flashbag.get('error') %}
+                <div class="alert alert-danger flash-message">{{ flashMessage }}</div>
+            {% endfor %}
+        </div>
 
         <div class="container-fluid section-margin nylas-content">
 
@@ -81,19 +82,29 @@
                                 </td>
                                 <td class="text-center">
                                     {# {% if emailOrigin.activeStatus == false %} #}
-                                        <form action="{{ path('nylas_set_account_status', {'id': emailOrigin.id, 'status': emailOrigin.activeStatus ? 'false' : 'true' }) }}"
+                                        {# <form action="{{ path('nylas_set_account_status', {'id': emailOrigin.id, 'status': emailOrigin.activeStatus ? 'false' : 'true' }) }}"
                                             method="post" style="display: inline;">
                                             <input type="hidden" name="_csrf_token"
                                                 value="{{ csrf_token('set_account_status') }}">
                                             <button type="submit" class="btn {{ emailOrigin.activeStatus ? 'btn-success' : 'btn-danger' }} btn-sm">
                                                 {% if emailOrigin.activeStatus %}Active{% else %}Deactive{% endif %}
                                             </button>
-                                        </form>
+                                        </form> #}
                                     {# {% else %}
                                         <button class="btn btn-primary btn-sm btn-disabled" disabled aria-disabled="true">
                                             Default Account
                                         </button>
                                     {% endif %} #}
+                                    {# <div class="form-check form-switch d-inline-block"> #}
+                                        <input type="checkbox"
+                                            class="form-check-input status-toggle"
+                                            role="switch"
+                                            id="emailStatusSwitch{{ emailOrigin.id }}"
+                                            data-id="{{ emailOrigin.id }}"
+                                            data-status="{{ emailOrigin.activeStatus ? 'true' : 'false' }}"
+                                            {{ emailOrigin.activeStatus ? 'checked' : '' }}
+                                            title="{{ emailOrigin.activeStatus ? 'Deactive this account' : 'Active this account' }}">
+                                    {# </div> #}
                                 </td>
                             </tr>
                         {% endfor %}
@@ -132,7 +143,7 @@
                             {% endfor %}
                             <form method="post" action="{{ path('nylas_email_folder_list', {'id': selectedEmailOriginId}) }}">
                                 <input type="hidden" name="_csrf_token" value="{{ csrf_token('nylas_folder_sync') }}">
-                                <div id="folder-tree" class="folder-tree">
+                                {# <div id="folder-tree" class="folder-tree">
                                     <ul class="list-unstyled">
                                         {% for folder in emailFolders %}
                                             <li class="folder-item">
@@ -145,7 +156,28 @@
                                             </li>
                                         {% endfor %}
                                     </ul>
+                                </div> #}
+                                <div class="nylas-dropdown-new" data-dropdown="checkbox">
+                                    <div class="nylas-dropdown-label">Select folders</div>
+                                    <div class="nylas-dropdown-list">
+                                        <div class="nylas-dropdown-search">
+                                            <input type="text" class="folder-search-input" placeholder="Search folders...">
+                                        </div>
+                                        <div class="nylas-dropdown-option check-all-option">
+                                            <a href="#" class="check-all-link">Select All</a>
+                                        </div>
+                                        {% for folder in emailFolders %}
+                                            <label class="nylas-dropdown-option">
+                                                <input type="checkbox" 
+                                                    name="folders[]" 
+                                                    value="{{ folder.folderUid }}"
+                                                    {% if folder.syncEnabled %}checked{% endif %} />
+                                                {{ folder.name }}
+                                            </label>
+                                        {% endfor %}
+                                    </div>
                                 </div>
+                                
                                 <button type="submit" class="btn btn-primary mt-3">
                                     Save Sync Preferences
                                 </button>
@@ -158,46 +190,11 @@
                     {% endif %}
                 </div>
             </div>
-            {# no ajax:asd #}
-{#<script>
-                    document.addEventListener('DOMContentLoaded', function() {
-                            document.querySelector('form[data-noajax="true"]').addEventListener('submit', function(event) {
-                                    event.stopPropagation();
-                                });
-                        });
-            </script>#}
-            <!-- Existing content -->
-{#            <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>#}
-
-            <script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    //console.log('Document loaded...........................');
-                    const select = document.getElementById('emailOriginSelect');
-                    if (select) {
-                        //console.log('Selected ID on load: ', select.value);
-                        select.setAttribute('onchange', null); // Remove inline onchange
-                        select.addEventListener('change', function() {
-                            const newId = this.value;
-                            //console.log('Changed to ID: ', newId);
-                            const newUrl = '/nylas/folderList/' + newId + '?_t=' + new Date().getTime();
-                            //console.log('Redirecting to: ', newUrl);
-                            window.location.href = newUrl;
-                        });
-                    } else {
-                        console.error('emailOriginSelect not found');
-                    }
-
-                    const urlParams = new URLSearchParams(window.location.search);
-                    if (urlParams.get('new_account') === '1') {
-                        const checkboxes = document.querySelectorAll('input[id^="folder-"]');
-                        checkboxes.forEach(checkbox => {
-                            checkbox.checked = false;
-                            console.log('Unchecked checkbox for folder ID: ', checkbox.value);
-                        });
-                    }
-                });
-            </script>
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block head_script %}
+    <script src="{{ asset('bundles/brainstreamnylas/js/folder_list.js') }}"></script>
 {% endblock %}

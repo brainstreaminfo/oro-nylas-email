@@ -1,0 +1,13 @@
+entry:
+    brainstreamnylas_folder_list:
+      - brainstreamnylas/js/folder_list
+
+map:
+    '*': {
+        'brainstreamnylas/js/folder_list': 'brainstreamnylas/js/folder_list'
+    }
+
+shim:
+    brainstreamnylas/js/folder_list:
+        imports:
+            - single|jquery|$
