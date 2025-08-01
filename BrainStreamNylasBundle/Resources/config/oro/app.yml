@@ -1,8 +1,0 @@
-design:
-  themes:
-    default:
-      groups:
-        - name: default
-          parent: default
-          assets:
-            - '@BrainStreamNylasBundle/Resources/public/js/folder_list.js'

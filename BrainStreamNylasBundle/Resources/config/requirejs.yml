@@ -1,8 +1,0 @@
-config:
-  paths:
-    'brainstreamnylas/folder_list': 'BrainStreamNylasBundle/js/folder_list'
-  shim:
-    'brainstreamnylas/folder_list': {
-      deps: ['jquery'],
-      exports: 'folderList'
-    }
