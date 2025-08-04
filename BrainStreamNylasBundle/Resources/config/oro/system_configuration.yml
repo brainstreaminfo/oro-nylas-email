@@ -2,19 +2,19 @@
 system_configuration:
   groups:
     nylas_settings:
-      title: 'Nylas Settings'
-      icon: 'fa-cogs'
+      title: "Nylas Settings"
+      icon: "fa-cogs"
       priority: 255
     nylas_configuration:
-      title: 'Configuration'
-      icon: 'fa-cog'
+      title: "Configuration"
+      icon: "fa-cog"
 
   fields:
     brainstream_nylas.client_id:
       data_type: string
       type: Symfony\Component\Form\Extension\Core\Type\TextType
       options:
-        label: 'Client ID'
+        label: "Client ID"
         required: true
         resettable: true
         constraints:
@@ -24,7 +24,7 @@ system_configuration:
       data_type: string
       type: Symfony\Component\Form\Extension\Core\Type\TextType
       options:
-        label: 'Client Secret'
+        label: "Client Secret"
         required: true
         resettable: true
         constraints:
@@ -34,22 +34,12 @@ system_configuration:
       data_type: string
       type: Symfony\Component\Form\Extension\Core\Type\ChoiceType
       options:
-        label: 'Region'
+        label: "Region"
         required: true
         resettable: true
         choices:
-          'us': 'us'
-          'eu': 'eu'
-        constraints:
-          - NotBlank: ~
-
-    brainstream_nylas.api_url:
-      data_type: string
-      type: Symfony\Component\Form\Extension\Core\Type\TextType
-      options:
-        label: 'API Server URL'
-        required: true
-        resettable: true
+          "US": "US"
+          "EU": "EU"
         constraints:
           - NotBlank: ~
 
@@ -68,4 +58,3 @@ system_configuration:
                       - brainstream_nylas.client_id
                       - brainstream_nylas.client_secret
                       - brainstream_nylas.region
-                      - brainstream_nylas.api_url

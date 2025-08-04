@@ -1,65 +1,80 @@
 <?php
 
+/**
+ * Nylas Message Iterator Service.
+ *
+ * This file is part of the BrainStream Nylas Bundle.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Service
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
+
 namespace BrainStream\Bundle\NylasBundle\Service;
 
-//use Leme\Bundle\EmailBundle\Entity\EmailFolder;
-
 use BrainStream\Bundle\NylasBundle\Entity\NylasEmailFolder;
-//use BrainStream\Bundle\NylasBundle\Manager\EmailFolder;
 use Oro\Bundle\ImapBundle\Mail\Storage\Message;
 
+/**
+ * Nylas Message Iterator Service.
+ *
+ * Implements Iterator and Countable interfaces for iterating over Nylas messages.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Service
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
 class NylasMessageIterator implements \Iterator, \Countable
 {
-    /** @var NylasClient */
-    private $nylasClient;
+    private NylasClient $nylasClient;
 
     /** @var int[]|null */
-    private $ids;
+    private ?array $ids = null;
 
     /** @var bool using message uids */
-    private $uidMode;
+    private bool $uidMode = false;
 
-    /** @var bool */
-    private $reverse = false;
+    private bool $reverse = false;
 
-    /** @var int */
-    private $batchSize = 1;
+    private int $batchSize = 1;
 
-    /** @var \Closure|null */
-    private $onBatchLoaded;
+    private ?\Closure $onBatchLoaded = null;
 
     /** @var Message[] an array is indexed by the Iterator keys */
-    private $batch = [];
+    private array $batch = [];
 
-    /** @var int|null */
-    private $iterationMin;
+    private ?int $iterationMin = null;
 
-    /** @var int|null */
-    private $iterationMax;
+    private ?int $iterationMax = null;
 
-    /** @var int|null */
-    private $iterationPos;
+    private ?int $iterationPos = null;
 
-    /** @var NylasEmailFolder $emailFolder */
-    private $emailFolder;
+    private NylasEmailFolder $emailFolder;
 
-    /** @var \DateTime */
-    private $lastSynchronizedAt;
+    private ?\DateTime $lastSynchronizedAt = null;
 
     /**
-     * Constructor
+     * Constructor.
      *
-     * @param NylasClient      $nylasClient
-     * @param NylasEmailFolder      $emailFolder
-     * @param int[]|null       $ids
-     * @param bool             $uidMode
+     * @param NylasClient      $nylasClient The Nylas client service
+     * @param NylasEmailFolder $emailFolder The email folder
+     * @param int[]|null       $ids         The message IDs
+     * @param bool             $uidMode     Whether using message UIDs
      */
-    public function __construct(NylasClient $nylasClient, NylasEmailFolder $emailFolder, array $ids = null, $uidMode = false)
-    {
+    public function __construct(
+        NylasClient $nylasClient,
+        NylasEmailFolder $emailFolder,
+        array $ids = null,
+        bool $uidMode = false
+    ) {
         $this->nylasClient = $nylasClient;
         $this->emailFolder = $emailFolder;
-        $this->ids         = $ids;
-        $this->uidMode     = $uidMode;
+        $this->ids = $ids;
+        $this->uidMode = $uidMode;
     }
 
     /**
@@ -69,49 +84,57 @@ class NylasMessageIterator implements \Iterator, \Countable
      * @param bool $reverse Determines the iteration order. By default from newest messages to oldest
      *                      true for from newest messages to oldest
      *                      false for from oldest messages to newest
+     *
+     * @return void
      */
-    public function setIterationOrder($reverse)
+    public function setIterationOrder(bool $reverse): void
     {
         $this->reverse = $reverse;
     }
 
     /**
-     * Set lasy email sync timestamp
+     * Set last email sync timestamp.
      *
-     * @param $lastSynchronizedAt
+     * @param \DateTime|null $lastSynchronizedAt The last synchronized timestamp
+     *
+     * @return void
      */
-    public function setLastSynchronizedAt($lastSynchronizedAt)
+    public function setLastSynchronizedAt(?\DateTime $lastSynchronizedAt): void
     {
         $this->lastSynchronizedAt = $lastSynchronizedAt;
     }
 
     /**
-     * Sets batch size
+     * Sets batch size.
      *
      * @param int $batchSize Determines how many messages can be loaded at once
+     *
+     * @return void
      */
-    public function setBatchSize($batchSize)
+    public function setBatchSize(int $batchSize): void
     {
         $this->batchSize = $batchSize;
     }
 
     /**
-     * Sets a callback function is called when a batch is loaded
+     * Sets a callback function is called when a batch is loaded.
      *
      * @param \Closure|null $callback The callback function is called when a batch is loaded
      *                                function (Message[] $batch)
+     *
+     * @return void
      */
-    public function setBatchCallback(\Closure $callback = null)
+    public function setBatchCallback(\Closure $callback = null): void
     {
         $this->onBatchLoaded = $callback;
     }
 
     /**
-     * The number of messages in this iterator
+     * The number of messages in this iterator.
      *
      * @return int
      */
-    public function count()
+    public function count(): int
     {
         $this->ensureInitialized();
 
@@ -121,19 +144,21 @@ class NylasMessageIterator implements \Iterator, \Countable
     }
 
     /**
-     * Return the current element
+     * Return the current element.
      *
      * @return Message
      */
-    public function current()
+    public function current(): mixed
     {
         return $this->batch[$this->iterationPos];
     }
 
     /**
-     * Move forward to next element
+     * Move forward to next element.
+     *
+     * @return void
      */
-    public function next()
+    public function next(): void
     {
         $this->increasePosition($this->iterationPos);
 
@@ -150,13 +175,12 @@ class NylasMessageIterator implements \Iterator, \Countable
                         [
                             'in' => $this->emailFolder->getFolderUid(),
                             'limit' => $this->batchSize,
-                            //'offset' => ($this->iterationPos - 1),
                             'fields' => 'include_headers',
                             'received_after' => $this->lastSynchronizedAt
                         ]
                     );
                 } catch (\Exception $e) {
-                    echo "Exception occur ad:".$e->getMessage();
+                    echo "Exception occur ad:" . $e->getMessage();
                 }
 
                 foreach ($messages['data'] as $message) {
@@ -176,21 +200,21 @@ class NylasMessageIterator implements \Iterator, \Countable
     }
 
     /**
-     * Return the key of the current element
+     * Return the key of the current element.
      *
-     * @return int on success, or null on failure.
+     * @return int|null on success, or null on failure.
      */
-    public function key()
+    public function key(): mixed
     {
         return $this->iterationPos;
     }
 
     /**
-     * Checks if current position is valid
+     * Checks if current position is valid.
      *
-     * @return boolean Returns true on success or false on failure.
+     * @return bool Returns true on success or false on failure.
      */
-    public function valid()
+    public function valid(): bool
     {
         $this->ensureInitialized();
 
@@ -198,9 +222,11 @@ class NylasMessageIterator implements \Iterator, \Countable
     }
 
     /**
-     * Rewind the Iterator to the first element
+     * Rewind the Iterator to the first element.
+     *
+     * @return void
      */
-    public function rewind()
+    public function rewind(): void
     {
         $this->initialize();
 
@@ -214,9 +240,11 @@ class NylasMessageIterator implements \Iterator, \Countable
     }
 
     /**
-     * Makes sure the Iterator is ready to work
+     * Makes sure the Iterator is ready to work.
+     *
+     * @return void
      */
-    protected function ensureInitialized()
+    protected function ensureInitialized(): void
     {
         if ($this->iterationMin === null || $this->iterationMax === null) {
             $this->initialize();
@@ -224,18 +252,20 @@ class NylasMessageIterator implements \Iterator, \Countable
     }
 
     /**
-     * Prepares the Iterator to work
+     * Prepares the Iterator to work.
+     *
+     * @return void
      */
-    protected function initialize()
+    protected function initialize(): void
     {
         if ($this->ids === null) {
             $this->iterationMin = 1;
             $messageCounter = $this->nylasClient->nylasClient->Messages->Message->list(
                 $this->nylasClient->nylasClient->Options->getGrantId(),
                 [
-                    'in'   => $this->emailFolder->getFolderUid(),
+                    'in' => $this->emailFolder->getFolderUid(),
                     'received_after' => $this->lastSynchronizedAt,
-                    'fields'         => 'include_headers'
+                    'fields' => 'include_headers'
                 ]
             );
             $this->iterationMax = count($messageCounter['data']);
@@ -246,25 +276,27 @@ class NylasMessageIterator implements \Iterator, \Countable
     }
 
     /**
-     * Get a message id by its position in the Iterator
+     * Get a message id by its position in the Iterator.
      *
-     * @param int $pos
+     * @param int $pos The position
      *
      * @return string
      */
-    protected function getMessageId($pos)
+    protected function getMessageId(int $pos): string
     {
         return $this->ids === null
-            ? $pos
-            : $this->ids[$pos];
+            ? (string)$pos
+            : (string)$this->ids[$pos];
     }
 
     /**
-     * Move the given position of the Iterator to the next element
+     * Move the given position of the Iterator to the next element.
      *
-     * @param int $pos
+     * @param int $pos The position to increase
+     *
+     * @return void
      */
-    protected function increasePosition(&$pos)
+    protected function increasePosition(int &$pos): void
     {
         if ($this->reverse) {
             --$pos;
@@ -274,13 +306,13 @@ class NylasMessageIterator implements \Iterator, \Countable
     }
 
     /**
-     * Checks if the given position is valid
+     * Checks if the given position is valid.
      *
-     * @param int $pos
+     * @param int $pos The position to check
      *
-     * @return boolean
+     * @return bool
      */
-    protected function isValidPosition($pos)
+    protected function isValidPosition(int $pos): bool
     {
         return
             $pos !== null

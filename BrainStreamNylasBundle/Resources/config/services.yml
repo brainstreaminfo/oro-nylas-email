@@ -150,6 +150,7 @@ services:
       - "@translator"
       - "@doctrine.orm.entity_manager"
       - "@logger"
+      - '@BrainStream\Bundle\NylasBundle\Service\ConfigService'
 
   BrainStream\Bundle\NylasBundle\Tools\EmailOriginHelper:
     arguments:
@@ -179,11 +180,6 @@ services:
       - "@oro_security.token_accessor"
       - "@oro_email.mailbox.manager"
       - "@oro_email.email_grid_mailbox_name_helper"
-
-  #BrainStream\Bundle\NylasBundle\Form\Type\EmailOriginFromType:
-  #  decorates: oro_email.form.type.email_origin_from
-  #  tags:
-  #    - { name: form.type }
 
   BrainStream\Bundle\NylasBundle\Form\Extension\EmailTypeExtension:
     arguments:

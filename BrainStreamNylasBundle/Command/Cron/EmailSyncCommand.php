@@ -1,5 +1,16 @@
 <?php
 
+/**
+ * Nylas Email Sync Command.
+ *
+ * This file is part of the BrainStream Nylas Bundle.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Command\Cron
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
 
 namespace BrainStream\Bundle\NylasBundle\Command\Cron;
 
@@ -12,29 +23,57 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+/**
+ * Nylas Email Sync Command.
+ *
+ * Console command for synchronizing emails via Nylas API.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Command\Cron
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
 class EmailSyncCommand extends Command implements CronCommandScheduleDefinitionInterface
 {
-    protected static $defaultName = 'oro:cron:nylas-sync';
-
     private const MAX_TASKS = -1;
+
     private const MAX_CONCURRENT_TASKS = 3;
+
     private const MIN_EXEC_INTERVAL_IN_MIN = 5;
+
     private const MAX_EXEC_TIME_IN_MIN = 5;
+
     private const MAX_JOBS_COUNT = 2;
 
     private NylasEmailSynchronizer $synchronizer;
 
+    /**
+     * Constructor for EmailSyncCommand.
+     *
+     * @param NylasEmailSynchronizer $synchronizer The email synchronizer
+     */
     public function __construct(NylasEmailSynchronizer $synchronizer)
     {
         $this->synchronizer = $synchronizer;
-        parent::__construct();
+        parent::__construct('oro:cron:nylas-sync');
     }
 
+    /**
+     * Get default cron schedule definition.
+     *
+     * @return string
+     */
     public function getDefaultDefinition(): string
     {
         return '*/1 * * * *'; // Runs every minute
     }
 
+    /**
+     * Configure the command.
+     *
+     * @return void
+     */
     protected function configure(): void
     {
         $this
@@ -87,6 +126,14 @@ class EmailSyncCommand extends Command implements CronCommandScheduleDefinitionI
             );
     }
 
+    /**
+     * Execute the command.
+     *
+     * @param InputInterface  $input  The input interface
+     * @param OutputInterface $output The output interface
+     *
+     * @return int
+     */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->synchronizer->setLogger(new OutputLogger($output));
@@ -116,6 +163,13 @@ class EmailSyncCommand extends Command implements CronCommandScheduleDefinitionI
         return Command::SUCCESS;
     }
 
+    /**
+     * Write attention message for force option.
+     *
+     * @param OutputInterface $output The output interface
+     *
+     * @return void
+     */
     private function writeAttentionMessageForOptionForce(OutputInterface $output): void
     {
         $output->writeln([

@@ -1,5 +1,17 @@
 <?php
 
+/**
+ * Nylas Email Manager.
+ *
+ * This file is part of the BrainStream Nylas Bundle.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Manager
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
+
 namespace BrainStream\Bundle\NylasBundle\Manager;
 
 use BrainStream\Bundle\NylasBundle\Entity\NylasEmailAddress;
@@ -13,11 +25,16 @@ use Oro\Bundle\ImapBundle\Util\DateTimeParser;
 use Symfony\Component\HttpFoundation\AcceptHeader;
 use Symfony\Component\HttpFoundation\AcceptHeaderItem;
 
-
 /**
- * Class ImapEmailManager
+ * Nylas Email Manager.
  *
- * @package Oro\Bundle\ImapBundle\Manager
+ * Manages Nylas email operations and conversions.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Manager
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
@@ -27,48 +44,52 @@ class NylasEmailManager
     /**
      * According to RFC 2822
      */
-    const SUBJECT_MAX_LENGTH = 998;
+    public const SUBJECT_MAX_LENGTH = 998;
 
-    private $currentFolder;
+    private ?string $currentFolder = null;
 
-    /** @var NylasClient */
-    private $client;
+    private NylasClient $client;
 
-    /** @var EmailEntityBuilder */
-    private $emailEntityBuilder;
+    private EmailEntityBuilder $emailEntityBuilder;
 
-    /** @var EntityManager */
-    private $entityManager;
+    private EntityManager $entityManager;
 
     /**
-     * @param NylasClient $connector
+     * Constructor for NylasEmailManager.
+     *
+     * @param NylasClient        $client        The Nylas client
+     * @param EmailEntityBuilder $entityBuilder The email entity builder
+     * @param EntityManager      $entityManager The entity manager
      */
     public function __construct(NylasClient $client, EmailEntityBuilder $entityBuilder, EntityManager $entityManager)
     {
-        $this->client             = $client;
+        $this->client = $client;
         $this->emailEntityBuilder = $entityBuilder;
-        $this->entityManager      = $entityManager;
+        $this->entityManager = $entityManager;
     }
 
     /**
-     * Set selected folder
+     * Set selected folder.
      *
-     * @param string $folder
+     * @param string $folder The folder name
+     *
+     * @return void
      */
-    public function selectFolder($folder)
+    public function selectFolder(string $folder): void
     {
         $this->currentFolder = $folder;
     }
 
     /**
-     * Retrieve email by its UID
+     * Retrieve email by its UID.
      *
-     * @param string $nylasEmailId
+     * @param string $nylasEmailId The Nylas email ID
      *
      * @return EmailHeader|null
+     *
      * @throws \RuntimeException When message can't be parsed correctly
      */
-    public function findEmail($nylasEmailId)
+    public function findEmail(string $nylasEmailId): ?EmailHeader
     {
         try {
             $msg = $this->client->nylasClient->Messages()->Message()->getMessage($nylasEmailId);
@@ -79,23 +100,20 @@ class NylasEmailManager
     }
 
     /**
-     * Creates Email DTO for the given email message
+     * Creates Email DTO for the given email message.
      *
-     * @param array $nylasEmailContent
-     *
-     * @parma bool $flag
-     *
-     * @parma bool $flag
+     * @param array $nylasEmailContent The Nylas email content
+     * @param bool  $flag              The flag
      *
      * @return Email|null
      *
      * @throws \RuntimeException if the given message cannot be converted to {@see Email} object
      */
-    public function convertToEmail(array $nylasEmailContent, $flag = true)
+    public function convertToEmail(array $nylasEmailContent, bool $flag = true): ?Email
     {
         $messageId = $this->client->getMessageId($nylasEmailContent, 'Message-Id', $nylasEmailContent['id']);
 
-        if ((count($nylasEmailContent['from']) == 0 || $messageId == null)  && $flag) {
+        if ((count($nylasEmailContent['from']) == 0 || $messageId == null) && $flag) {
             return null;
         }
         /** @var Email $email */
@@ -111,12 +129,9 @@ class NylasEmailManager
                 )
                 ->setFrom($this->emailEntityBuilder->address($this->getFromString($nylasEmailContent, 'email'))->getEmail())
                 ->setSentAt($this->getDateTime($nylasEmailContent, 'date'))
-//                ->setReceivedAt($this->getReceivedAt($nylasEmailContent))
                 ->setReceivedAt($this->getDateTime($nylasEmailContent, 'date'))
                 ->setInternalDate(new \DateTime())
                 ->setImportance($this->getImportance($nylasEmailContent))
-                //->setRefs($this->getReferences($nylasEmailContent, 'References')) //ref:adbrain commented as not found
-                //->setXMessageId($this->getReferences($nylasEmailContent, 'In-Reply-To'))
                 ->setXThreadId($this->getString($nylasEmailContent, 'thread_id'))
                 ->setMultiMessageId($this->getMultiMessageId($nylasEmailContent, 'id'))
                 ->setAcceptLanguageHeader($this->getAcceptLanguageHeader($nylasEmailContent));
@@ -154,11 +169,11 @@ class NylasEmailManager
     /**
      * Returns Accept-Language header from headers.
      *
-     * @param array $nylasEmailContent
+     * @param array $nylasEmailContent The Nylas email content
      *
      * @return string
      */
-    protected function getAcceptLanguageHeader(array $nylasEmailContent)
+    protected function getAcceptLanguageHeader(array $nylasEmailContent): string
     {
         $header = isset($nylasEmailContent['Accept-Language']) ?? false;
 
@@ -181,17 +196,17 @@ class NylasEmailManager
     }
 
     /**
-     * Gets a string representation of an email header
+     * Gets a string representation of an email header.
      *
-     * @param array  $nylasEmailContent
-     * @param string $name
-     * @param int    $lengthLimit if more than 0 returns part of header specified length
+     * @param array  $nylasEmailContent The Nylas email content
+     * @param string $name              The header name
+     * @param int    $lengthLimit       If more than 0 returns part of header specified length
      *
      * @return string
      *
      * @throws \RuntimeException if a value of the requested header cannot be converted to a string
      */
-    protected function getString(array $nylasEmailContent, $name, $lengthLimit = 0)
+    protected function getString(array $nylasEmailContent, string $name, int $lengthLimit = 0): string
     {
         $header = $nylasEmailContent[$name];
         if ($header === false) {
@@ -222,17 +237,16 @@ class NylasEmailManager
     }
 
     /**
-     * Gets a from string representation of an email header
+     * Gets a from string representation of an email header.
      *
-     * @param array  $nylasEmailContent
-     * @param string $name
-     * @param int    $lengthLimit if more than 0 returns part of header specified length
+     * @param array  $nylasEmailContent The Nylas email content
+     * @param string $name              The header name
      *
      * @return string
      *
      * @throws \RuntimeException if a value of the requested header cannot be converted to a string
      */
-    protected function getFromString(array $nylasEmailContent, $name)
+    protected function getFromString(array $nylasEmailContent, string $name): string
     {
         $header = $nylasEmailContent['from'][0][$name];
         if ($header === false) {
@@ -271,12 +285,14 @@ class NylasEmailManager
     }
 
     /**
-     * @param array   $nylasEmailContent
-     * @param         $name
+     * Get multi message ID.
+     *
+     * @param array  $nylasEmailContent The Nylas email content
+     * @param string $name              The field name
      *
      * @return array|null
      */
-    protected function getMultiMessageId(array $nylasEmailContent, $name)
+    protected function getMultiMessageId(array $nylasEmailContent, string $name): ?array
     {
         if (!isset($nylasEmailContent[$name])) {
             return null;
@@ -297,14 +313,14 @@ class NylasEmailManager
     }
 
     /**
-     * Gets a email references header
+     * Gets a email references header.
      *
-     * @param array  $nylasEmailContent
-     * @param string $name
+     * @param array  $nylasEmailContent The Nylas email content
+     * @param string $name              The header name
      *
      * @return string|null
      */
-    protected function getReferences(array $nylasEmailContent, $name)
+    protected function getReferences(array $nylasEmailContent, string $name): ?string
     {
         $values = [];
         $header = $nylasEmailContent['headers'][$name];
@@ -322,37 +338,36 @@ class NylasEmailManager
     }
 
     /**
-     * Gets an email header as DateTime type
+     * Gets an email header as DateTime type.
      *
-     * @param array  $email
-     * @param string $name
+     * @param array  $email The email content
+     * @param string $name  The field name
      *
      * @return \DateTime
+     *
      * @throws \Exception if header contain incorrect DateTime string
      */
-    protected function getDateTime(array $email, $name)
+    protected function getDateTime(array $email, string $name): \DateTime
     {
-        $val     = $email[$name];
+        $val = $email[$name];
         $newDate = new \DateTime();
         $newDate->setTimestamp($val);
         return $newDate;
     }
 
     /**
-     * Gets DateTime when an email is received
+     * Gets DateTime when an email is received.
      *
-     * @param array $email
+     * @param array $email The email content
      *
      * @return \DateTime
+     *
      * @throws \Exception if Received header contain incorrect DateTime string
      */
-    protected function getReceivedAt(array $email)
+    protected function getReceivedAt(array $email): \DateTime
     {
         $val = $email['Received'];
         $str = '';
-        /*if ($val instanceof HeaderInterface) {
-            $str = $val();
-        } else*/
         if ($val instanceof \ArrayIterator) {
             $val->rewind();
             $str = $val->current();
@@ -369,22 +384,22 @@ class NylasEmailManager
     }
 
     /**
-     * Get an email recipients
+     * Get an email recipients.
      *
-     * @param array  $nylasEmailContent
-     * @param string $name
+     * @param array  $nylasEmailContent The Nylas email content
+     * @param string $name              The field name
      *
      * @return string[]
      */
-    protected function getRecipients(array $nylasEmailContent, $name)
+    protected function getRecipients(array $nylasEmailContent, string $name): array
     {
         if (!isset($nylasEmailContent[$name])) {
             return [];
         }
-        $result = array();
-        $val    = $nylasEmailContent[$name];
+        $result = [];
+        $val = $nylasEmailContent[$name];
         foreach ($val as $addr) {
-            $email    = str_replace('"', "", json_encode($addr['email']));
+            $email = str_replace('"', "", json_encode($addr['email']));
             $result[] = str_replace("'", "", $email);
         }
 
@@ -392,13 +407,13 @@ class NylasEmailManager
     }
 
     /**
-     * Gets an email importance
+     * Gets an email importance.
      *
-     * @param array $nylasEmailContent
+     * @param array $nylasEmailContent The Nylas email content
      *
-     * @return integer
+     * @return int
      */
-    protected function getImportance(array $nylasEmailContent)
+    protected function getImportance(array $nylasEmailContent): int
     {
         $importance = isset($nylasEmailContent['importance']) ?? null;
         switch (strtolower($importance)) {
@@ -412,42 +427,49 @@ class NylasEmailManager
     }
 
     /**
-     * Convert a string to DateTime
+     * Convert a string to DateTime.
      *
-     * @param string $value
+     * @param string $value The date string
      *
      * @return \DateTime
      *
      * @throws \Exception
      */
-    protected function convertToDateTime($value)
+    protected function convertToDateTime(string $value): \DateTime
     {
         return DateTimeParser::parse($value);
     }
 
-    protected static function removeEmoji($text)
+    /**
+     * Remove emoji from text.
+     *
+     * @param string $text The text to clean
+     *
+     * @return string
+     */
+    protected static function removeEmoji(string $text): string
     {
         $clean_text = '';
 
         // Match Emoticons
         $regexEmoticons = '/[\x{1F600}-\x{1F64F}]/u';
-        $clean_text     = preg_replace($regexEmoticons, '', $text);
+        $clean_text = preg_replace($regexEmoticons, '', $text);
 
         // Match Miscellaneous Symbols and Pictographs
         $regexSymbols = '/[\x{1F300}-\x{1F5FF}]/u';
-        $clean_text   = preg_replace($regexSymbols, '', $clean_text);
+        $clean_text = preg_replace($regexSymbols, '', $clean_text);
 
         // Match Transport And Map Symbols
         $regexTransport = '/[\x{1F680}-\x{1F6FF}]/u';
-        $clean_text     = preg_replace($regexTransport, '', $clean_text);
+        $clean_text = preg_replace($regexTransport, '', $clean_text);
 
         // Match Miscellaneous Symbols
-        $regexMisc  = '/[\x{2600}-\x{26FF}]/u';
+        $regexMisc = '/[\x{2600}-\x{26FF}]/u';
         $clean_text = preg_replace($regexMisc, '', $clean_text);
 
         // Match Dingbats
         $regexDingbats = '/[\x{2700}-\x{27BF}]/u';
-        $clean_text    = preg_replace($regexDingbats, '', $clean_text);
+        $clean_text = preg_replace($regexDingbats, '', $clean_text);
 
         return $clean_text;
     }

@@ -1,5 +1,17 @@
 <?php
 
+/**
+ * Add Nylas Email Folder Fields Migration.
+ *
+ * This file is part of the BrainStream Nylas Bundle.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Migrations\Schema\v1_3
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
+
 namespace BrainStream\Bundle\NylasBundle\Migrations\Schema\v1_3;
 
 use Doctrine\DBAL\Schema\Schema;
@@ -8,14 +20,24 @@ use Oro\Bundle\MigrationBundle\Migration\Migration;
 use Oro\Bundle\MigrationBundle\Migration\QueryBag;
 
 /**
+ * Add Nylas Email Folder Fields Migration.
+ *
+ * Migration to add Nylas-specific fields to the email folder table.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Migrations\Schema\v1_3
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
  * @SuppressWarnings(PHPMD.TooManyMethods)
  * @SuppressWarnings(PHPMD.ExcessiveClassLength)
  */
 class AddNylasEmailFolderFields implements Migration
 {
-
     /**
-     * @inheritDoc
+     * Get migration version.
+     *
+     * @return string
      */
     public function getMigrationVersion(): string
     {
@@ -23,7 +45,12 @@ class AddNylasEmailFolderFields implements Migration
     }
 
     /**
-     * @inheritDoc
+     * Up migration.
+     *
+     * @param Schema   $schema  The schema
+     * @param QueryBag $queries The query bag
+     *
+     * @return void
      */
     public function up(Schema $schema, QueryBag $queries): void
     {
@@ -42,13 +69,16 @@ class AddNylasEmailFolderFields implements Migration
                 'state' => ExtendScope::STATE_ACTIVE
             ]
         );
-        /** Tables generation **/
+        // Tables generation
         $this->addFields($schema);
     }
 
-
     /**
-     * Create oro_email_origin table
+     * Add fields to the schema.
+     *
+     * @param Schema $schema The schema
+     *
+     * @return void
      */
     private function addFields(Schema $schema): void
     {

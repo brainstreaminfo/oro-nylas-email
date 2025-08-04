@@ -1,5 +1,17 @@
 <?php
 
+/**
+ * BrainStream Nylas Extension.
+ *
+ * This file is part of the BrainStream Nylas Bundle.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\DependencyInjection
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
+
 namespace BrainStream\Bundle\NylasBundle\DependencyInjection;
 
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -8,11 +20,29 @@ use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 
-class BrainStreamNylasExtension extends Extension //implements PrependExtensionInterface
+/**
+ * BrainStream Nylas Extension.
+ *
+ * Extension for configuring the BrainStream Nylas Bundle.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\DependencyInjection
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
+class BrainStreamNylasExtension extends Extension
 {
-    public function load(array $configs, ContainerBuilder $container)
+    /**
+     * Load the extension configuration.
+     *
+     * @param array            $configs   The configs
+     * @param ContainerBuilder $container The container builder
+     *
+     * @return void
+     */
+    public function load(array $configs, ContainerBuilder $container): void
     {
-        //file_put_contents(__DIR__ . '/debugbst.log', "BrainStreamNylasExtension loaded\n", FILE_APPEND);
         $configuration = new Configuration();
         $config = $this->processConfiguration($configuration, $configs);
 
@@ -24,18 +54,9 @@ class BrainStreamNylasExtension extends Extension //implements PrependExtensionI
         }
     }
 
-    /*public function prepend(ContainerBuilder $container): void
-    {
-        $container->prependExtensionConfig('twig', [
-            'form_themes' => [
-                '@BrainStreamNylas/Form/fields.html.twig'
-            ]
-        ]);
-        // Optional: Prepend configuration for other extensions (e.g., routing, twig)
-    }*/
-
     /**
-     * ref:set alias
+     * Get the extension alias.
+     *
      * @return string
      */
     #[\Override]

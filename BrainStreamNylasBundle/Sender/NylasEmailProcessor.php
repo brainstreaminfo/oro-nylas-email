@@ -1,5 +1,16 @@
 <?php
 
+/**
+ * Nylas Email Processor for handling email sending via Nylas API v3.
+ *
+ * This file is part of the BrainStream Nylas Bundle.
+ *
+ * @category  BrainStream
+ * @package   BrainStream\Bundle\NylasBundle\Sender
+ * @author    BrainStream Team
+ * @license   MIT
+ * @link      https://github.com/brainstreaminfo/oro-nylas-email
+ */
 
 namespace BrainStream\Bundle\NylasBundle\Sender;
 
@@ -36,58 +47,51 @@ use Symfony\Component\Mime\MimeTypes;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Oro\Bundle\EmailBundle\EmbeddedImages\EmbeddedImagesInEmailModelHandler;
 use Psr\Log\LoggerInterface;
-
-//#ref:adbrain missing dependancies in orm crm 6
-//use Oro\Bundle\EmailBundle\Mailer\DirectMailer;
-//use Oro\Bundle\EmailBundle\Mailer\Processor;
-//use Oro\Bundle\SecurityBundle\Encoder\Mcrypt;
-//use Oro\Bundle\SecurityBundle\SecurityFacade;
+use BrainStream\Bundle\NylasBundle\Service\ConfigService;
 
 /**
- * Class NylasEmailProcessor
- * @package BrainStream\Bundle\NylasBundle\Mailer
+ * Nylas Email Processor for handling email sending via Nylas API v3.
+ *
+ * This class decorates the default EmailModelSender to intercept email sending
+ * and route it through Nylas API when a NylasEmailOrigin is configured.
+ *
+ * @category  BrainStream
+ * @package   BrainStream\Bundle\NylasBundle\Sender
+ * @author    BrainStream Team
+ * @license   MIT
+ * @link      https://github.com/brainstreaminfo/oro-nylas-email
  */
 class NylasEmailProcessor extends EmailModelSender
 {
-    /** @var NylasClient $nylasClient */
-    protected $nylasClient;
-
-    //private $securityFacade;
-
-    /** @var TranslatorInterface */
-    private $translator;
-
-    /** @var EmailOriginHelper */
-    private $extendEmailOriginHelper;
-
-    //ref:adbrain
-    private $eventDispatcher;
-    private $emailEntityBuilder;
-
-    private $emailActivityManager;
-
-    private $entityManager;
-
-    private $emailAddressHelper;
-
-    private $logger;
-
+    private NylasClient $nylasClient;
+    private TranslatorInterface $translator;
+    private EmailOriginHelper $extendEmailOriginHelper;
+    private EventDispatcherInterface $eventDispatcher;
+    private EmailEntityBuilder $emailEntityBuilder;
+    private EmailActivityManager $emailActivityManager;
+    private EntityManagerInterface $entityManager;
+    private EmailAddressHelper $emailAddressHelper;
+    private LoggerInterface $logger;
+    private ConfigService $configService;
 
     /**
-     * @param MailerInterface $mailer
-     * @param EmbeddedImagesInEmailModelHandler $embeddedImagesHandler
-     * @param EmailFactory $emailFactory
-     * @param EmailUserFromEmailModelBuilder $emailUserBuilder
-     * @param EventDispatcherInterface $eventDispatcher
-     * @param EntityListener $entityListener
-     * @param EmailAddressHelper $emailAddressHelper
-     * @param EmailEntityBuilder $emailEntityBuilder
-     * @param EmailActivityManager $emailActivityManager
-     * @param EmailOriginHelper $emailOriginHelper
-     * @param NylasClient $nylasClient
-     * @param TranslatorInterface $translator
-     * @param EntityManagerInterface $entityManager
-     * @param LoggerInterface $logger
+     * Constructor for NylasEmailProcessor.
+     *
+     * @param MailerInterface                    $mailer                    The mailer service
+     * @param EmbeddedImagesInEmailModelHandler  $embeddedImagesHandler     The embedded images handler
+     * @param EmailFactory                       $emailFactory              The email factory
+     * @param EmailUserFromEmailModelBuilder     $emailUserBuilder          The email user builder
+     * @param EventDispatcherInterface           $eventDispatcher           The event dispatcher
+     * @param EntityListener                     $entityListener            The entity listener
+     * @param EmailAddressHelper                 $emailAddressHelper        The email address helper
+     * @param EmailEntityBuilder                 $emailEntityBuilder        The email entity builder
+     * @param EmailActivityManager               $emailActivityManager      The email activity manager
+     * @param EmailOriginHelper                  $emailOriginHelper         The email origin helper
+     * @param NylasClient                        $nylasClient               The Nylas client
+     * @param TranslatorInterface                $translator                The translator
+     * @param EntityManagerInterface             $entityManager             The entity manager
+     * @param LoggerInterface                    $logger                    The logger
+     * @param ConfigService                      $configService             The config service
      */
     public function __construct(
         MailerInterface $mailer,
@@ -104,6 +108,7 @@ class NylasEmailProcessor extends EmailModelSender
         TranslatorInterface $translator,
         EntityManagerInterface $entityManager,
         LoggerInterface $logger,
+        ConfigService $configService,
     ) {
         parent::__construct(
             $mailer,
@@ -122,38 +127,75 @@ class NylasEmailProcessor extends EmailModelSender
         $this->eventDispatcher = $eventDispatcher;
         $this->emailEntityBuilder = $emailEntityBuilder;
         $this->logger = $logger;
+        $this->configService = $configService;
     }
 
-    /** ref:adbrain method name changed to process() -> send()
+    /**
+     * Enhanced send method with improved Nylas integration.
      *
-     * @param EmailModel $model
-     * @param null       $origin
-     * @param bool       $persist
+     * @param EmailModel    $model   The email model to send
+     * @param mixed         $origin  The email origin (optional)
+     * @param bool          $persist Whether to persist the email (default: true)
      *
      * @return EmailUser
      * @throws \Exception
      */
     public function send(EmailModel $model, $origin = null, $persist = true): EmailUser
     {
-        //$this->send1($model, $origin);
-       // $this->assertModel($model);
-        $messageDate     = new \DateTime('now', new \DateTimeZone('UTC'));
+        $messageDate = new \DateTime('now', new \DateTimeZone('UTC'));
         $parentMessageId = $this->getParentMessageId($model);
-        $fromEmailAddress = $this->getUserEmailAddress($model->getFrom());
 
         if ($origin instanceof NylasEmailOrigin && $origin->getAccountId() != null) {
             $fromEmailAddress = $origin->getMailboxName();
             $this->nylasClient->setEmailOrigin($origin);
-            $model->setFrom($origin->getOwner()->getFullName() . '<' . $fromEmailAddress . '>');
-            $message           = $this->prepareMessage($model, $parentMessageId, $messageDate);
-            // Verify the origin account
+
+            // Verify the origin account and get account info including display name
             $accountStatus = $this->verifyAccountStatus();
-            // Send an email only if the account is in running state
-            if(isset($accountStatus['grant_status']) && $accountStatus['grant_status'] == 'valid') {
-                $sentMessageDetail = $this->processSend($message, $origin);
+
+            // Get display name from Nylas API response, fallback to email address
+            $displayName = $fromEmailAddress; // Default to email address
+            if (isset($accountStatus['email']) && !empty($accountStatus['email'])) {
+                // Try to get name from account data, fallback to email
+                $displayName = $accountStatus['name'] ?? $accountStatus['email'];
+            }
+
+            // New way: Use display name from Nylas API
+            $model->setFrom($displayName . '<' . $fromEmailAddress . '>');
+
+            // Old way: Use current user's name (commented out)
+            // $model->setFrom($origin->getOwner()->getFullName() . '<' . $fromEmailAddress . '>');
+
+            $message = $this->prepareMessageNew($model, $parentMessageId, $messageDate);
+
+            // Send an email only if the account is in valid state
+            if (isset($accountStatus['grant_status']) && $accountStatus['grant_status'] == 'valid') {
+                try {
+                    $sentMessageDetail = $this->processSendNew($message, $origin);
+
+                    if (!$sentMessageDetail) {
+                        throw new \Exception('Failed to send email via Nylas API');
+                    }
+
+                    $this->logger->info(
+                        'Email sent successfully via Nylas',
+                        [
+                            'message_id' => $sentMessageDetail['data']['id'] ?? 'unknown',
+                            'grant_id' => $this->nylasClient->nylasClient->Options->getGrantId()
+                        ]
+                    );
+
+                } catch (\Exception $e) {
+                    $this->logger->error(
+                        'Failed to send email via Nylas',
+                        [
+                            'error' => $e->getMessage(),
+                            'grant_id' => $this->nylasClient->nylasClient->Options->getGrantId()
+                        ]
+                    );
+                    throw $e;
+                }
             } else {
-                // throw an exception if the account is not in running state
-                throw new \Exception('Access token are invalid. please try re-connecting your e-mail account');
+                throw new \Exception('Access token is invalid. Please try re-connecting your email account');
             }
         } else {
             throw new \Exception($this->translator->trans("automation.origin.config.message"));
@@ -163,7 +205,7 @@ class NylasEmailProcessor extends EmailModelSender
         $emailUser->setOrigin($origin);
 
         if ($persist) {
-            // persist the email and all related entities such as folders, email addresses etc.//ref:adbrain get entity manager way changed
+            // persist the email and all related entities such as folders, email addresses etc.
             $this->emailEntityBuilder->getBatch()->persist($this->entityManager);
             $this->persistAttachments($model, $emailUser->getEmail());
 
@@ -178,11 +220,178 @@ class NylasEmailProcessor extends EmailModelSender
         }
 
         $event = new EmailBodyAdded($emailUser->getEmail());
-        //ref:adbrain
-        //$this->eventDispatcher->dispatch(EmailBodyAdded::NAME, $event);
         $this->eventDispatcher->dispatch($event);
 
         return $emailUser;
+    }
+
+    /**
+     * Enhanced process send method based on user's processSendNew.
+     *
+     * @param array            $message      The message array to send
+     * @param NylasEmailOrigin $emailOrigin  The email origin
+     *
+     * @return array
+     * @throws \Exception
+     */
+    public function processSendNew($message, $emailOrigin): array
+    {
+        try {
+            $client = HttpClient::create(
+                [
+                    'timeout' => 60,
+                    'max_duration' => 60,
+                    'verify_peer' => false,
+                    'verify_host' => false,
+                    'http_version' => '1.1'
+                ]
+            );
+
+            $grantId = $this->nylasClient->nylasClient->Options->getGrantId();
+            $apiKey = $this->nylasClient->nylasClient->Options->getApiKey();
+
+            // Debug: Log the message payload
+            $this->logger->info(
+                'Nylas API request payload',
+                [
+                    'grant_id' => $grantId,
+                    'message_payload' => $message,
+                    'api_url' => $this->configService->getApiUrl() . "/v3/grants/$grantId/messages/send"
+                ]
+            );
+
+            // Validate required fields for Nylas API v3
+            $requiredFields = ['from', 'to', 'subject', 'body', 'type'];
+            foreach ($requiredFields as $field) {
+                if (!isset($message[$field]) || empty($message[$field])) {
+                    throw new \Exception("Missing required field: $field");
+                }
+            }
+
+            // Ensure 'to' field is an array
+            if (!is_array($message['to']) || empty($message['to'])) {
+                throw new \Exception("'to' field must be a non-empty array");
+            }
+
+            $defaultOptions = [
+                'headers' => [
+                    'Authorization' => "Bearer $apiKey",
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                ],
+                'json' => $message
+            ];
+
+            $response = $client->request('POST', $this->configService->getApiUrl() . "/v3/grants/$grantId/messages/send", $defaultOptions);
+            $responseData = $response->toArray();
+
+            // Log the response for debugging
+            $this->logger->info(
+                'Nylas API response',
+                [
+                    'status_code' => $response->getStatusCode(),
+                    'response_data' => $responseData
+                ]
+            );
+
+            return $responseData;
+
+        } catch (\Exception $e) {
+            $this->logger->error(
+                'Error occurred while sending email via Nylas',
+                [
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'grant_id' => $grantId ?? 'unknown',
+                    'message_payload' => $message ?? 'unknown'
+                ]
+            );
+
+            // If it's an HTTP exception, try to get the response body
+            if ($e instanceof \Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface) {
+                try {
+                    $response = $e->getResponse();
+                    $responseBody = $response->getContent(false);
+                    $this->logger->error(
+                        'Nylas API error response body',
+                        [
+                            'status_code' => $response->getStatusCode(),
+                            'response_body' => $responseBody
+                        ]
+                    );
+                } catch (\Exception $responseException) {
+                    $this->logger->error(
+                        'Could not read Nylas API error response',
+                        [
+                            'response_error' => $responseException->getMessage()
+                        ]
+                    );
+                }
+            }
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Enhanced prepare message method based on user's prepareMessageNew
+     */
+    protected function prepareMessageNew(EmailModel $model, $parentMessageId, $messageDate): array
+    {
+        $message = [];
+
+        if ($parentMessageId) {
+            $message['reply_to_message_id'] = $parentMessageId;
+        }
+
+        $addresses = $this->getAddresses($model->getFrom());
+        // Fix: 'from' should be an array of objects, not a single object
+        $message['from'] = !empty($addresses) ? [$addresses[0]] : [
+            [
+                'name' => 'Unknown Sender',
+                'email' => 'default@example.com'
+            ]
+        ];
+        // Fix: 'reply_to' should be an array of objects, not a single object
+        $message['reply_to'] = $message['from']; // Use the same as 'from' unless specified otherwise
+
+        $message['to'] = array_map(function ($email) {
+            return ['email' => $email];
+        }, $model->getTo());
+
+        $message['cc'] = array_map(function ($email) {
+            return ['email' => $email];
+        }, $model->getCc() ?? []);
+
+        $message['bcc'] = array_map(function ($email) {
+            return ['email' => $email];
+        }, $model->getBcc() ?? []);
+
+        $message['body'] = mb_convert_encoding($model->getBody(), 'UTF-8', 'auto');
+        $message['subject'] = mb_convert_encoding($model->getSubject(), 'UTF-8', 'auto');
+
+        // Add required fields for Nylas API v3
+        $message['type'] = $model->getType() === 'html' ? 'html' : 'text';
+
+        // Handle attachments
+        $attachments = $this->addEmailAttachments($model);
+        if (!empty($attachments)) {
+            $message['attachments'] = $attachments;
+        }
+
+        // Process embedded images
+        $response = $this->processEmbeddedImages($message, $model);
+        $message['body'] = $response[0];
+        if (!empty($response[1])) {
+            $inlineAttachments = $response[1];
+            if (!isset($message['attachments'])) {
+                $message['attachments'] = [];
+            }
+            $message['attachments'] = array_merge($message['attachments'], $inlineAttachments);
+        }
+
+        return $message;
     }
 
     //ref:adbrain added to support existing code, taken from processor class of old oro
@@ -273,7 +482,7 @@ class NylasEmailProcessor extends EmailModelSender
                 'verify_host' => false,
                 'http_version' => '1.1'
             ]);
-            $response = $client->request('POST', "https://api.us.nylas.com/v3/grants/$grantId/messages/send", $defaultOptions);
+            $response = $client->request('POST', $this->configService->getApiUrl() . "/v3/grants/$grantId/messages/send", $defaultOptions);
             $responseData = $response->toArray();
         } catch (\Exception $e) {
             /*ob_start();

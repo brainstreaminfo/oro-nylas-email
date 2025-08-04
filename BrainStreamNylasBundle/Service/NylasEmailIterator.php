@@ -1,35 +1,53 @@
 <?php
 
+/**
+ * Nylas Email Iterator Service.
+ *
+ * This file is part of the BrainStream Nylas Bundle.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Service
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
+
 namespace BrainStream\Bundle\NylasBundle\Service;
 
 use BrainStream\Bundle\NylasBundle\Manager\DTO\Email;
 use BrainStream\Bundle\NylasBundle\Manager\NylasEmailManager;
 
+/**
+ * Nylas Email Iterator Service.
+ *
+ * Implements Iterator and Countable interfaces for iterating over Nylas emails.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Service
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
 class NylasEmailIterator implements \Iterator, \Countable
 {
-    /** @var NylasMessageIterator */
-    private $iterator;
+    private NylasMessageIterator $iterator;
 
-    /** @var NylasEmailManager */
-    private $manager;
+    private NylasEmailManager $manager;
 
     /** @var Email[]|null an array is indexed by underlying iterator keys */
-    private $batch;
+    private ?array $batch = null;
 
-    /** @var \Closure */
-    private $onBatchLoaded;
+    private \Closure $onBatchLoaded;
 
-    /** @var \Closure */
-    private $onConvertError;
+    private ?\Closure $onConvertError = null;
 
-    /** @var int|null */
-    private $iterationPos = 0;
+    private ?int $iterationPos = 0;
 
     /**
-     * Constructor
+     * Constructor.
      *
-     * @param NylasMessageIterator $iterator
-     * @param NylasEmailManager $manager
+     * @param NylasMessageIterator $iterator The message iterator
+     * @param NylasEmailManager    $manager  The email manager
      */
     public function __construct(NylasMessageIterator $iterator, NylasEmailManager $manager)
     {
@@ -43,44 +61,52 @@ class NylasEmailIterator implements \Iterator, \Countable
     }
 
     /**
-     * Sets iteration order
+     * Sets iteration order.
      *
      * @param bool $reverse Determines the iteration order. By default from newest emails to oldest
      *                      true for from newest emails to oldest
      *                      false for from oldest emails to newest
+     *
+     * @return void
      */
-    public function setIterationOrder($reverse)
+    public function setIterationOrder(bool $reverse): void
     {
         $this->iterator->setIterationOrder($reverse);
     }
 
     /**
-     * Set lasy email sync timestamp
+     * Set last email sync timestamp.
      *
-     * @param $lastSynchronizedAt
+     * @param mixed $lastSynchronizedAt The last synchronized timestamp
+     *
+     * @return void
      */
-    public function setLastSynchronizedAt($lastSynchronizedAt)
+    public function setLastSynchronizedAt($lastSynchronizedAt): void
     {
         $this->iterator->setLastSynchronizedAt($lastSynchronizedAt);
     }
 
     /**
-     * Sets batch size
+     * Sets batch size.
      *
      * @param int $batchSize Determines how many messages can be loaded at once
+     *
+     * @return void
      */
-    public function setBatchSize($batchSize)
+    public function setBatchSize(int $batchSize): void
     {
         $this->iterator->setBatchSize($batchSize);
     }
 
     /**
-     * Sets a callback function is called when a batch is loaded
+     * Sets a callback function is called when a batch is loaded.
      *
      * @param \Closure|null $callback The callback function is called when a batch is loaded
      *                                function (Email[] $batch)
+     *
+     * @return void
      */
-    public function setBatchCallback(\Closure $callback = null)
+    public function setBatchCallback(\Closure $callback = null): void
     {
         if ($callback === null) {
             // restore default callback
@@ -96,36 +122,44 @@ class NylasEmailIterator implements \Iterator, \Countable
 
     /**
      * Sets a callback function that will handle message convert error. If this callback set then iterator will work
-     * in fail safe mode invalid messages will just skipped
+     * in fail safe mode invalid messages will just skipped.
      *
-     * @param callable $callback The callback function.
-     *                           function (\Exception)
+     * @param \Closure|null $callback The callback function.
+     *                                function (\Exception)
+     *
+     * @return void
      */
-    public function setConvertErrorCallback(\Closure $callback = null)
+    public function setConvertErrorCallback(\Closure $callback = null): void
     {
         $this->onConvertError = $callback;
     }
 
     /**
      * {@inheritdoc}
+     *
+     * @return int
      */
-    public function count()
+    public function count(): int
     {
         return $this->iterator->count();
     }
 
     /**
      * {@inheritdoc}
+     *
+     * @return mixed
      */
-    public function current()
+    public function current(): mixed
     {
         return $this->batch[$this->iterationPos];
     }
 
     /**
      * {@inheritdoc}
+     *
+     * @return void
      */
-    public function next()
+    public function next(): void
     {
         $this->iterationPos++;
 
@@ -142,24 +176,30 @@ class NylasEmailIterator implements \Iterator, \Countable
 
     /**
      * {@inheritdoc}
+     *
+     * @return mixed
      */
-    public function key()
+    public function key(): mixed
     {
         return $this->iterationPos;
     }
 
     /**
      * {@inheritdoc}
+     *
+     * @return bool
      */
-    public function valid()
+    public function valid(): bool
     {
         return isset($this->batch[$this->iterationPos]);
     }
 
     /**
      * {@inheritdoc}
+     *
+     * @return void
      */
-    public function rewind()
+    public function rewind(): void
     {
         $this->iterationPos = 0;
         $this->batch = [];
@@ -168,11 +208,15 @@ class NylasEmailIterator implements \Iterator, \Countable
     }
 
     /**
-     * @param array $batch
+     * Handle batch loaded event.
+     *
+     * @param array $batch The batch of messages
      *
      * @throws \Exception
+     *
+     * @return void
      */
-    protected function handleBatchLoaded($batch)
+    protected function handleBatchLoaded(array $batch): void
     {
         $this->batch = [];
 

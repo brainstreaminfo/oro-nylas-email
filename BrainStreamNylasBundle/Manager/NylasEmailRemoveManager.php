@@ -1,5 +1,16 @@
 <?php
 
+/**
+ * Nylas Email Remove Manager.
+ *
+ * This file is part of the BrainStream Nylas Bundle.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Manager
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
 
 namespace BrainStream\Bundle\NylasBundle\Manager;
 
@@ -13,41 +24,52 @@ use Oro\Bundle\EmailBundle\Entity\EmailUser;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Oro\Bundle\EmailBundle\Entity\Email;
+use Psr\Log\LoggerInterface;
 
+/**
+ * Nylas Email Remove Manager.
+ *
+ * Manages removal of Nylas emails and folders.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Manager
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
 class NylasEmailRemoveManager implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
-    /** @var EntityManager */
-    protected $em;
+    protected EntityManager $em;
 
     /**
-     * @param ManagerRegistry $doctrine
+     * Constructor for NylasEmailRemoveManager.
+     *
+     * @param ManagerRegistry $doctrine The doctrine manager registry
      */
     public function __construct(ManagerRegistry $doctrine)
     {
         $this->em = $doctrine->getManager();
     }
 
-
     /**
-     * Deletes all empty outdated folders
+     * Deletes all empty outdated folders.
      *
-     * @param EmailOrigin $origin
-     * @param             $logger
+     * @param EmailOrigin     $origin The email origin
+     * @param LoggerInterface $logger The logger
+     *
+     * @return void
      */
-    public function cleanupOutdatedFolders(EmailOrigin $origin, $logger)
+    public function cleanupOutdatedFolders(EmailOrigin $origin, LoggerInterface $logger): void
     {
         $logger->info('Removing empty outdated folders ...');
 
-       /** @var  $EmailFolders */
-        $EmailFolders = $this->em->getRepository(NylasEmailFolder::class)
-                                 ->findBy(['origin' => $origin]);
-        $folders      = new ArrayCollection();
+        $emailFolders = $this->em->getRepository(NylasEmailFolder::class)
+            ->findBy(['origin' => $origin]);
+        $folders = new ArrayCollection();
 
-        /** @var EmailFolder $emailFolder */
-        foreach ($EmailFolders as $emailFolder) {
-            //$emailFolder = $nylasFolder->getFolder();
+        foreach ($emailFolders as $emailFolder) {
             if ($emailFolder->getSubFolders()->count() === 0) {
                 $logger->info(sprintf('Remove "%s" folder.', $emailFolder->getFullName()));
 
@@ -61,8 +83,6 @@ class NylasEmailRemoveManager implements LoggerAwareInterface
                         $emailFolder->removeNylasEmail($item);
                     }
                 }
-
-                $this->em->remove($emailFolder);
             }
         }
 
@@ -73,17 +93,17 @@ class NylasEmailRemoveManager implements LoggerAwareInterface
     }
 
     /**
-     * Removes email from all outdated folders
+     * Removes email from all outdated folders.
      *
-     * @param Email[] $nylasEmails The list of all related NYLAS emails
-     * @param EmailOrigin $emailOrigin
+     * @param Email[]     $nylasEmails The list of all related NYLAS emails
+     * @param EmailOrigin $emailOrigin The email origin
+     *
+     * @return void
      */
-    public function removeEmailFromOutdatedFolders(array $nylasEmails, EmailOrigin $emailOrigin)
+    public function removeEmailFromOutdatedFolders(array $nylasEmails, EmailOrigin $emailOrigin): void
     {
-
-        /** @var EmailUser  $emailUser */
         $emailUsers = $this->em->getRepository(EmailUser::class)
-                              ->findBy(['origin' => $emailOrigin, 'email' => $nylasEmails]);
+            ->findBy(['origin' => $emailOrigin, 'email' => $nylasEmails]);
 
         foreach ($emailUsers as $emailUser) {
             foreach ($emailUser->getOrigin()->getFolders() as $emailFolder) {
@@ -94,6 +114,5 @@ class NylasEmailRemoveManager implements LoggerAwareInterface
             }
             $this->em->remove($emailUser->getEmail());
         }
-
     }
 }

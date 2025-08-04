@@ -1,4 +1,17 @@
 <?php
+
+/**
+ * Nylas Email Synchronizer.
+ *
+ * This file is part of the BrainStream Nylas Bundle.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Sync
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
+
 namespace BrainStream\Bundle\NylasBundle\Sync;
 
 use BrainStream\Bundle\NylasBundle\Entity\NylasEmailOrigin;
@@ -19,73 +32,90 @@ use Oro\Bundle\LocaleBundle\Model\LocaleSettings;
 use Oro\Bundle\NotificationBundle\NotificationAlert\NotificationAlertManager;
 use Psr\Log\LoggerAwareInterface;
 
+/**
+ * Nylas Email Synchronizer.
+ *
+ * Handles synchronization of Nylas emails.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Sync
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
 class NylasEmailSynchronizer extends AbstractEmailSynchronizer
 {
-    const SYNC_CODE_EXCEPTION   = 4;
+    public const SYNC_CODE_EXCEPTION = 4;
 
-    /** @var NylasClient */
-    private $nylasClient;
+    private NylasClient $nylasClient;
 
-    /** @var EmailEntityBuilder */
-    private $emailEntityBuilder;
+    private EmailEntityBuilder $emailEntityBuilder;
 
-    /** @var NylasEmailRemoveManager */
-    private $removeManager;
+    private NylasEmailRemoveManager $removeManager;
 
-    /** @var NylasEmailManager */
-    private $nyalsEmailManager;
+    private NylasEmailManager $nyalsEmailManager;
 
-    /** @var string $emailSyncInterval */
-    private $emailSyncInterval;
+    private string $emailSyncInterval;
 
-    /** @var EmailActivityListProvider */
-    private $emailActivityProvider;
+    private EmailActivityListProvider $emailActivityProvider;
 
-    /** @var ActivityManager */
-    private $activityManager;
+    private ActivityManager $activityManager;
 
-    /** @var LocaleSettings $localeSettings */
-    private $localeSettings;
+    private LocaleSettings $localeSettings;
 
-    /** @var string */
-    private $clientIdentifier;
+    private string $clientIdentifier;
 
-    /** @var string */
-    private $managerUrl;
+    private string $managerUrl;
 
-    private $notificationAlertManager;
+    private NotificationAlertManager $notificationAlertManager;
 
     /**
-     * NylasEmailSynchronizer constructor.
-     * @param ManagerRegistry $managerRegistry
-     * @param KnownEmailAddressCheckerFactory $knownEmailAddressCheckerFactory
-     * @param NylasClient $nylasClient
-     * @param EmailEntityBuilder $emailEntityBuilder
-     * @param NylasEmailRemoveManager $removeManager
-     * @param NylasEmailManager $nylasEmailManager
-     * @param string $emailSyncInterval
-     * @param EmailActivityListProvider $activityListProvider
-     * @param LocaleSettings $localeSettings
-     * @param string $clientIdentifier
-     * @param string $managerUrl
+     * Constructor for NylasEmailSynchronizer.
+     *
+     * @param ManagerRegistry                    $managerRegistry              The manager registry
+     * @param KnownEmailAddressCheckerFactory   $knownEmailAddressCheckerFactory The known email address checker factory
+     * @param NotificationAlertManager          $notificationAlertManager     The notification alert manager
+     * @param NylasClient                       $nylasClient                  The Nylas client
+     * @param EmailEntityBuilder                $emailEntityBuilder           The email entity builder
+     * @param NylasEmailRemoveManager           $removeManager                The remove manager
+     * @param NylasEmailManager                 $nylasEmailManager            The Nylas email manager
+     * @param string                            $emailSyncInterval            The email sync interval
+     * @param EmailActivityListProvider         $activityListProvider         The activity list provider
+     * @param ActivityManager                   $activityManager              The activity manager
+     * @param LocaleSettings                    $localeSettings               The locale settings
      */
-    public function __construct(ManagerRegistry $managerRegistry, KnownEmailAddressCheckerFactory $knownEmailAddressCheckerFactory, NotificationAlertManager $notificationAlertManager,NylasClient $nylasClient, EmailEntityBuilder $emailEntityBuilder, NylasEmailRemoveManager $removeManager, NylasEmailManager $nylasEmailManager, string $emailSyncInterval, EmailActivityListProvider $activityListProvider, ActivityManager $activityManager, LocaleSettings $localeSettings)
-    {
+    public function __construct(
+        ManagerRegistry $managerRegistry,
+        KnownEmailAddressCheckerFactory $knownEmailAddressCheckerFactory,
+        NotificationAlertManager $notificationAlertManager,
+        NylasClient $nylasClient,
+        EmailEntityBuilder $emailEntityBuilder,
+        NylasEmailRemoveManager $removeManager,
+        NylasEmailManager $nylasEmailManager,
+        string $emailSyncInterval,
+        EmailActivityListProvider $activityListProvider,
+        ActivityManager $activityManager,
+        LocaleSettings $localeSettings
+    ) {
         parent::__construct($managerRegistry, $knownEmailAddressCheckerFactory, $notificationAlertManager);
-        $this->nylasClient              = $nylasClient;
-        $this->emailEntityBuilder       = $emailEntityBuilder;
-        $this->removeManager            = $removeManager;
-        $this->nyalsEmailManager        = $nylasEmailManager;
-        $this->emailSyncInterval        = $emailSyncInterval;
-        $this->emailActivityProvider    = $activityListProvider;
-        $this->activityManager          = $activityManager;
-        $this->localeSettings           = $localeSettings;
-        $this->clientIdentifier         = '';
-        $this->managerUrl               = '';
+        $this->nylasClient = $nylasClient;
+        $this->emailEntityBuilder = $emailEntityBuilder;
+        $this->removeManager = $removeManager;
+        $this->nyalsEmailManager = $nylasEmailManager;
+        $this->emailSyncInterval = $emailSyncInterval;
+        $this->emailActivityProvider = $activityListProvider;
+        $this->activityManager = $activityManager;
+        $this->localeSettings = $localeSettings;
+        $this->clientIdentifier = '';
+        $this->managerUrl = '';
     }
 
     /**
-     * {@inheritdoc}
+     * Check if synchronizer supports the given origin.
+     *
+     * @param EmailOrigin $origin The email origin
+     *
+     * @return bool
      */
     public function supports(EmailOrigin $origin): bool
     {
@@ -93,7 +123,9 @@ class NylasEmailSynchronizer extends AbstractEmailSynchronizer
     }
 
     /**
-     * @return string|void
+     * Get email origin class.
+     *
+     * @return string
      */
     protected function getEmailOriginClass(): string
     {
@@ -101,8 +133,11 @@ class NylasEmailSynchronizer extends AbstractEmailSynchronizer
     }
 
     /**
-     * @param object $origin
-     * @return NylasEmailSynchronizationProcessor|void
+     * Create synchronization processor.
+     *
+     * @param object $origin The email origin
+     *
+     * @return \Oro\Bundle\EmailBundle\Sync\AbstractEmailSynchronizationProcessor
      */
     protected function createSynchronizationProcessor($origin): \Oro\Bundle\EmailBundle\Sync\AbstractEmailSynchronizationProcessor
     {
@@ -120,8 +155,10 @@ class NylasEmailSynchronizer extends AbstractEmailSynchronizer
     }
 
     /**
+     * Find origin to sync.
+     *
      * @param int $maxConcurrentTasks   The maximum number of synchronization jobs running in the same time
-     * @param int $minExecIntervalInMin The minimum time interval (in minutes) between two  synchronizations of the same email origin
+     * @param int $minExecIntervalInMin The minimum time interval (in minutes) between two synchronizations of the same email origin
      *
      * @return EmailOrigin|null
      * @throws \Exception
@@ -143,28 +180,27 @@ class NylasEmailSynchronizer extends AbstractEmailSynchronizer
         // - previously failed items are shifted at 30 minutes back (it means that if sync failed
         //   the next sync is performed only after 30 minutes)
         // - "In Process" items are moved at the end
-        $repo   = $this->getEntityManager()->getRepository($this->getEmailOriginClass());
+        $repo = $this->getEntityManager()->getRepository($this->getEmailOriginClass());
         $query = $repo->createQueryBuilder('o')
-                      ->select(
-                          'o'
-                          . ', CASE WHEN o.syncCode = :inProcess THEN 0 ELSE 1 END AS HIDDEN p1'
-                          . ', (COALESCE(o.syncCode, 1000) * 30'
-                          . ' + TIMESTAMPDIFF(MINUTE, COALESCE(o.syncCodeUpdatedAt, :min), :now)'
-                          . ' / (CASE o.syncCode WHEN :success THEN 100 ELSE 1 END)) AS HIDDEN p2'
-                      )
-                      ->where('o.isActive = :isActive AND (o.syncCodeUpdatedAt IS NULL OR o.syncCodeUpdatedAt <= :border) AND o.syncCode IN (:syncCode)')
-                      ->orderBy('p1, p2 DESC, o.syncCodeUpdatedAt')
-                      ->setParameter('inProcess', self::SYNC_CODE_IN_PROCESS)
-                      ->setParameter('success', self::SYNC_CODE_SUCCESS)
-                      ->setParameter('isActive', true)
-                      ->setParameter('now', $now)
-                      ->setParameter('min', $min)
-                      ->setParameter('border', $border)
-                      ->setParameter('syncCode', [2,3])
-                      ->setMaxResults($maxConcurrentTasks + 1)
-                      ->getQuery();
+            ->select(
+                'o'
+                . ', CASE WHEN o.syncCode = :inProcess THEN 0 ELSE 1 END AS HIDDEN p1'
+                . ', (COALESCE(o.syncCode, 1000) * 30'
+                . ' + TIMESTAMPDIFF(MINUTE, COALESCE(o.syncCodeUpdatedAt, :min), :now)'
+                . ' / (CASE o.syncCode WHEN :success THEN 100 ELSE 1 END)) AS HIDDEN p2'
+            )
+            ->where('o.isActive = :isActive AND (o.syncCodeUpdatedAt IS NULL OR o.syncCodeUpdatedAt <= :border) AND o.syncCode IN (:syncCode)')
+            ->orderBy('p1, p2 DESC, o.syncCodeUpdatedAt')
+            ->setParameter('inProcess', self::SYNC_CODE_IN_PROCESS)
+            ->setParameter('success', self::SYNC_CODE_SUCCESS)
+            ->setParameter('isActive', true)
+            ->setParameter('now', $now)
+            ->setParameter('min', $min)
+            ->setParameter('border', $border)
+            ->setParameter('syncCode', [2, 3])
+            ->setMaxResults($maxConcurrentTasks + 1)
+            ->getQuery();
 
-        /** @var EmailOrigin[] $origins */
         $origins = $query->getResult();
         $result = null;
         foreach ($origins as $origin) {
@@ -186,14 +222,15 @@ class NylasEmailSynchronizer extends AbstractEmailSynchronizer
         return $result;
     }
 
-
     /**
      * Performs a synchronization of emails for the given email origin.
      *
-     * @param EmailOrigin $origin
-     * @param SynchronizationProcessorSettings $settings
+     * @param EmailOrigin                           $origin   The email origin
+     * @param SynchronizationProcessorSettings|null $settings The synchronization processor settings
      *
      * @throws \Exception
+     *
+     * @return void
      */
     protected function doSyncOrigin(EmailOrigin $origin, SynchronizationProcessorSettings $settings = null): void
     {
@@ -210,13 +247,13 @@ class NylasEmailSynchronizer extends AbstractEmailSynchronizer
         }
 
         try {
-            #TODO ref:adbrain changed for testing purpose only, very IMP revert later SYNC_CODE_SUCCESS to SYNC_CODE_IN_PROCESS!
+            // TODO ref:adbrain changed for testing purpose only, very IMP revert later SYNC_CODE_SUCCESS to SYNC_CODE_IN_PROCESS!
             if ($this->changeOriginSyncState($origin, self::SYNC_CODE_SUCCESS)) {
                 $syncStartTime = $this->getCurrentUtcDateTime();
                 if ($settings) {
                     $processor->setSettings($settings);
                 }
-                $processor->process($origin, $syncStartTime, new EmailSyncNotificationBag());//error
+                $processor->process($origin, $syncStartTime, new EmailSyncNotificationBag());
                 $this->changeOriginSyncState($origin, self::SYNC_CODE_SUCCESS, $syncStartTime);
             } else {
                 $this->logger->info('Skip because it is already in process.');
@@ -226,12 +263,12 @@ class NylasEmailSynchronizer extends AbstractEmailSynchronizer
             $this->changeOriginSyncState($origin, self::SYNC_CODE_SUCCESS);
             throw $ex;
         } catch (\Exception $ex) {
-            if((strpos( $ex->getMessage(), "No valid API key or access_token provided." ) !== false) || (strpos( $ex->getMessage(), "Includes authentication errors, blocked developer applications, and cancelled accounts." ) !== false) || (strpos( $ex->getMessage(), "An error occurred in the Nylas server. If this persists, please see our status page or contact support." ) !== false) || (strpos( $ex->getMessage(), "resource has been removed from our servers." ) !== false) || (strpos( $ex->getMessage(), "timed out making an external request. Please try again." ) !== false) || (strpos( $ex->getMessage(), "The requested item doesn't exist" ) !== false)) {
+            if ((strpos($ex->getMessage(), "No valid API key or access_token provided.") !== false) || (strpos($ex->getMessage(), "Includes authentication errors, blocked developer applications, and cancelled accounts.") !== false) || (strpos($ex->getMessage(), "An error occurred in the Nylas server. If this persists, please see our status page or contact support.") !== false) || (strpos($ex->getMessage(), "resource has been removed from our servers.") !== false) || (strpos($ex->getMessage(), "timed out making an external request. Please try again.") !== false) || (strpos($ex->getMessage(), "The requested item doesn't exist") !== false)) {
                 $this->setOriginSyncStateToFailed($origin);
-            } elseif((strpos( $ex->getMessage(), "cURL error 35: OpenSSL SSL_connect: SSL_ERROR_SYSCALL in connection to api.nylas.com:443" ) !== false)){
+            } elseif ((strpos($ex->getMessage(), "cURL error 35: OpenSSL SSL_connect: SSL_ERROR_SYSCALL in connection to api.nylas.com:443") !== false)) {
                 $this->setSyncStateToManualSync($origin);
             } else {
-                if((strpos($ex->getMessage(), "some issue found when calling nylas.") !== false) || (strpos($ex->getMessage(), "cURL error 6: Could not resolve host: api.nylas.com") !== false)) {
+                if ((strpos($ex->getMessage(), "some issue found when calling nylas.") !== false) || (strpos($ex->getMessage(), "cURL error 6: Could not resolve host: api.nylas.com") !== false)) {
                     // Ignore the errors
                 } else {
                     $this->appendLog($ex, $origin);
@@ -250,11 +287,13 @@ class NylasEmailSynchronizer extends AbstractEmailSynchronizer
     }
 
     /**
-     *  Attempts to sets the state of a given email origin to Exception.
+     * Attempts to sets the state of a given email origin to Exception.
      *
-     * @param EmailOrigin $origin
+     * @param EmailOrigin $origin The email origin
+     *
+     * @return void
      */
-    protected function setSyncStateToManualSync(EmailOrigin $origin)
+    protected function setSyncStateToManualSync(EmailOrigin $origin): void
     {
         try {
             $this->changeOriginSyncState($origin, self::SYNC_CODE_SUCCESS);
@@ -268,11 +307,13 @@ class NylasEmailSynchronizer extends AbstractEmailSynchronizer
     }
 
     /**
-     *  Attempts to sets the state of a given email origin to Exception.
+     * Attempts to sets the state of a given email origin to Exception.
      *
-     * @param EmailOrigin $origin
+     * @param EmailOrigin $origin The email origin
+     *
+     * @return void
      */
-    protected function setSyncStateToCustomException(EmailOrigin $origin)
+    protected function setSyncStateToCustomException(EmailOrigin $origin): void
     {
         try {
             $this->changeOriginSyncState($origin, self::SYNC_CODE_SUCCESS);
@@ -288,20 +329,23 @@ class NylasEmailSynchronizer extends AbstractEmailSynchronizer
     /**
      * Add logs about the exception generated while sync emails and status goes to 4.
      *
-     * @param \Exception  $exception
-     * @param EmailOrigin $origin
+     * @param \Exception  $exception The exception
+     * @param EmailOrigin $origin    The email origin
+     *
+     * @return void
      */
-    public function appendLog(\Exception $exception, EmailOrigin $origin){
-        try{
-            $data  = [
-                'subDomain'       => $this->clientIdentifier,
-                'emailOrigin'     => $origin->getMailboxName(),
-                'error'           => $exception->getMessage(),
-                'timeZone'        => $this->localeSettings->getTimeZone(),
+    public function appendLog(\Exception $exception, EmailOrigin $origin): void
+    {
+        try {
+            $data = [
+                'subDomain' => $this->clientIdentifier,
+                'emailOrigin' => $origin->getMailboxName(),
+                'error' => $exception->getMessage(),
+                'timeZone' => $this->localeSettings->getTimeZone(),
             ];
 
             $originsResponse = $this->getEntityManager()->getRepository(NylasEmailOrigin::class)->postNylasException($this->managerUrl, $data);
-        } catch (\Exception $exception){
+        } catch (\Exception $exception) {
             $this->logger->error(
                 sprintf('Cannot add logs. Error: %s', $exception->getMessage()),
                 ['exception' => $exception]

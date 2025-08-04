@@ -1,5 +1,16 @@
 <?php
 
+/**
+ * Configuration Nylas Type.
+ *
+ * This file is part of the BrainStream Nylas Bundle.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Form\Type
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
 
 namespace BrainStream\Bundle\NylasBundle\Form\Type;
 
@@ -10,145 +21,215 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-//use Symfony\Component\Translation\TranslatorInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Oro\Bundle\ConfigBundle\Config\ConfigManager;
 use Oro\Bundle\ImapBundle\Form\EventListener\ApplySyncSubscriber;
 use Oro\Bundle\ImapBundle\Form\EventListener\OriginFolderSubscriber;
 use Oro\Bundle\ImapBundle\Form\EventListener\DecodeFolderSubscriber;
-//use Oro\Bundle\SecurityBundle\SecurityFacade;
+use Oro\Bundle\ImapBundle\Entity\UserEmailOrigin;
 use BrainStream\Bundle\NylasBundle\Entity\NylasEmailOrigin;
 use Symfony\Component\Form\Extension\Core\Type\ButtonType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
+use Oro\Bundle\SecurityBundle\Authentication\TokenAccessorInterface;
 
 /**
+ * Configuration Nylas Type.
+ *
+ * Form type for Nylas configuration.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Form\Type
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 class ConfigurationNylasType extends AbstractType
 {
-    const NAME = 'oro_configuration_nylas';
+    public const NAME = 'oro_configuration_nylas';
 
-    /** @var TranslatorInterface */
-    protected $translator;
+    protected TranslatorInterface $translator;
 
-    /** ConfigManager */
-    protected $userConfigManager;
+    protected ConfigManager $userConfigManager;
 
-    /** @var SecurityFacade */
-    protected $securityFacade;
+    protected TokenAccessorInterface $tokenAccessor;
 
     /**
-     * @param TranslatorInterface $translator
-     * @param ConfigManager $userConfigManager
-     * @param SecurityFacade $securityFacade
+     * Constructor for ConfigurationNylasType.
+     *
+     * @param TranslatorInterface        $translator        The translator service
+     * @param ConfigManager             $userConfigManager The user config manager
+     * @param TokenAccessorInterface    $tokenAccessor     The token accessor
      */
     public function __construct(
         TranslatorInterface $translator,
         ConfigManager $userConfigManager,
-        //SecurityFacade $securityFacade
+        TokenAccessorInterface $tokenAccessor
     ) {
         $this->translator = $translator;
         $this->userConfigManager = $userConfigManager;
-        //$this->securityFacade = $securityFacade;
+        $this->tokenAccessor = $tokenAccessor;
     }
 
     /**
-     * {@inheritdoc}
+     * Build the form.
+     *
+     * @param FormBuilderInterface $builder The form builder
+     * @param array                $options The form options
+     *
+     * @return void
      */
-    public function buildForm(FormBuilderInterface $builder, array $options)
+    public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        //$builder->addEventSubscriber(new DecodeFolderSubscriber());
-        //$this->addOwnerOrganizationEventListener($builder);
-        //$this->addNewOriginCreateEventListener($builder);
-
         $builder
-            ->add('check', ButtonType::class, [
-                'label' => $this->translator->trans('oro.imap.configuration.connect'),
-                'attr' => ['class' => 'btn btn-primary']
-            ])
-            ->add('accessToken', HiddenType::class, [
-                'required' => true
-            ])
-            //->add('provider', HiddenType::class, [
-            //    'required' => true
-            //])
-            ->add('accountId', HiddenType::class, [
-                'required' => true
-            ])
-            ->add('user', HiddenType::class, [
-                'required' => true,
-            ])
-            ->add('tokenType', HiddenType::class, [
-                'required' => true
-            ])
-            ->add('imapHost', HiddenType::class, [
-                'required' => true,
-                'data' => GmailImap::DEFAULT_GMAIL_HOST
-            ])
-            ->add('imapPort', HiddenType::class, [
-                'required' => true,
-                'data' => GmailImap::DEFAULT_GMAIL_PORT
-            ])
-            ->add('user', HiddenType::class, [
-                'required' => true,
-            ])
-            ->add('imapEncryption', HiddenType::class, [
-                'required' => true,
-                'data' => GmailImap::DEFAULT_GMAIL_SSL
-            ])
-            ->add('clientId', HiddenType::class, [
-                'data' => $this->userConfigManager->get('oro_google_integration.client_id')
-            ])
-            ->add('smtpHost', HiddenType::class, [
-                'required' => false,
-                'data' => GmailImap::DEFAULT_GMAIL_SMTP_HOST
-            ])
-            ->add('smtpPort', HiddenType::class, [
-                'required' => false,
-                'data' => GmailImap::DEFAULT_GMAIL_SMTP_PORT
-            ])
-            ->add('smtpEncryption', HiddenType::class, [
-                'required' => false,
-                'data' => GmailImap::DEFAULT_GMAIL_SMTP_SSL
-            ]);
-        $builder->add('folders', EmailFolderTreeType::class, [
-            'label' => $this->translator->trans('oro.email.folders.label'),
-            'attr' => ['class' => 'folder-tree'],
-            'tooltip' => 'If a folder is uncheked, all the data saved in it will be deleted',
-        ]);
+            ->add(
+                'check',
+                ButtonType::class,
+                [
+                    'label' => $this->translator->trans('oro.imap.configuration.connect'),
+                    'attr' => ['class' => 'btn btn-primary']
+                ]
+            )
+            ->add(
+                'accessToken',
+                HiddenType::class,
+                [
+                    'required' => true
+                ]
+            )
+            ->add(
+                'accountId',
+                HiddenType::class,
+                [
+                    'required' => true
+                ]
+            )
+            ->add(
+                'user',
+                HiddenType::class,
+                [
+                    'required' => true,
+                ]
+            )
+            ->add(
+                'tokenType',
+                HiddenType::class,
+                [
+                    'required' => true
+                ]
+            )
+            ->add(
+                'imapHost',
+                HiddenType::class,
+                [
+                    'required' => true,
+                    'data' => GmailImap::DEFAULT_GMAIL_HOST
+                ]
+            )
+            ->add(
+                'imapPort',
+                HiddenType::class,
+                [
+                    'required' => true,
+                    'data' => GmailImap::DEFAULT_GMAIL_PORT
+                ]
+            )
+            ->add(
+                'imapEncryption',
+                HiddenType::class,
+                [
+                    'required' => true,
+                    'data' => GmailImap::DEFAULT_GMAIL_SSL
+                ]
+            )
+            ->add(
+                'clientId',
+                HiddenType::class,
+                [
+                    'data' => $this->userConfigManager->get('oro_google_integration.client_id')
+                ]
+            )
+            ->add(
+                'smtpHost',
+                HiddenType::class,
+                [
+                    'required' => false,
+                    'data' => GmailImap::DEFAULT_GMAIL_SMTP_HOST
+                ]
+            )
+            ->add(
+                'smtpPort',
+                HiddenType::class,
+                [
+                    'required' => false,
+                    'data' => GmailImap::DEFAULT_GMAIL_SMTP_PORT
+                ]
+            )
+            ->add(
+                'smtpEncryption',
+                HiddenType::class,
+                [
+                    'required' => false,
+                    'data' => GmailImap::DEFAULT_GMAIL_SMTP_SSL
+                ]
+            );
+        $builder->add(
+            'folders',
+            EmailFolderTreeType::class,
+            [
+                'label' => $this->translator->trans('oro.email.folders.label'),
+                'attr' => ['class' => 'folder-tree'],
+                'tooltip' => 'If a folder is uncheked, all the data saved in it will be deleted',
+            ]
+        );
     }
 
     /**
-     * {@inheritdoc}
+     * Configure form options.
+     *
+     * @param OptionsResolver $resolver The options resolver
+     *
+     * @return void
      */
-    public function configureOptions(OptionsResolver $resolver)
+    public function configureOptions(OptionsResolver $resolver): void
     {
-        $resolver->setDefaults([
-            'data_class' => NylasEmailOrigin::class,
-            'allow_extra_fields' => true
-        ]);
+        $resolver->setDefaults(
+            [
+                'data_class' => NylasEmailOrigin::class,
+                'allow_extra_fields' => true
+            ]
+        );
     }
 
     /**
-     * {@inheritdoc}
+     * Get the form name.
+     *
+     * @return string
      */
-    public function getName()
+    public function getName(): string
     {
         return $this->getBlockPrefix();
     }
 
     /**
-     * {@inheritdoc}
+     * Get the block prefix.
+     *
+     * @return string
      */
-    public function getBlockPrefix()
+    public function getBlockPrefix(): string
     {
         return self::NAME;
     }
 
     /**
-     * @param FormBuilderInterface $builder
+     * Add owner organization event listener.
+     *
+     * @param FormBuilderInterface $builder The form builder
+     *
+     * @return void
      */
-    protected function addOwnerOrganizationEventListener(FormBuilderInterface $builder)
+    protected function addOwnerOrganizationEventListener(FormBuilderInterface $builder): void
     {
         $builder->addEventListener(
             FormEvents::POST_SUBMIT,
@@ -157,12 +238,12 @@ class ConfigurationNylasType extends AbstractType
                 $data = $event->getData();
                 if ($data !== null) {
                     if (($data->getOwner() === null) && ($data->getMailbox() === null)) {
-                        $data->setOwner($this->securityFacade->getLoggedUser());
+                        $data->setOwner($this->tokenAccessor->getUser());
                     }
                     if ($data->getOrganization() === null) {
-                        $organization = $this->securityFacade->getOrganization()
-                            ? $this->securityFacade->getOrganization()
-                            : $this->securityFacade->getLoggedUser()->getOrganization();
+                        $organization = $this->tokenAccessor->getOrganization()
+                            ? $this->tokenAccessor->getOrganization()
+                            : $this->tokenAccessor->getUser()->getOrganization();
                         $data->setOrganization($organization);
                     }
 
@@ -173,10 +254,15 @@ class ConfigurationNylasType extends AbstractType
     }
 
     /**
-     * @param FormBuilderInterface $builder
+     * Add new origin create event listener.
+     *
+     * @param FormBuilderInterface $builder The form builder
+     *
+     * @return void
+     *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
-    protected function addNewOriginCreateEventListener(FormBuilderInterface $builder)
+    protected function addNewOriginCreateEventListener(FormBuilderInterface $builder): void
     {
         $builder->addEventListener(
             FormEvents::PRE_SUBMIT,
@@ -191,8 +277,7 @@ class ConfigurationNylasType extends AbstractType
                     }
                 );
                 if (count($filtered) > 0) {
-                    if (
-                        $entity instanceof UserEmailOrigin
+                    if ($entity instanceof UserEmailOrigin
                         && $entity->getImapHost() !== null
                         && array_key_exists('imapHost', $data) && $data['imapHost'] !== null
                         && array_key_exists('user', $data) && $data['user'] !== null

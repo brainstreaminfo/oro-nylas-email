@@ -1,9 +1,21 @@
 <?php
 
+/**
+ * Nylas Email Synchronization Processor.
+ *
+ * This file is part of the BrainStream Nylas Bundle.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Sync
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
 
 namespace BrainStream\Bundle\NylasBundle\Sync;
 
 use BrainStream\Bundle\NylasBundle\Entity\NylasEmailFolder;
+use BrainStream\Bundle\NylasBundle\Entity\NylasEmailOrigin;
 use BrainStream\Bundle\NylasBundle\Manager\DTO\Email;
 use BrainStream\Bundle\NylasBundle\Manager\NylasEmailManager;
 use BrainStream\Bundle\NylasBundle\Manager\NylasEmailRemoveManager;
@@ -32,49 +44,60 @@ use Oro\Bundle\ImapBundle\Mail\Storage\Exception\UnselectableFolderException;
 use Oro\Bundle\OrganizationBundle\Entity\OrganizationInterface;
 use Oro\Bundle\UserBundle\Entity\User;
 
+/**
+ * Nylas Email Synchronization Processor.
+ *
+ * Handles the synchronization processing of Nylas emails.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Sync
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
 class NylasEmailSynchronizationProcessor extends AbstractEmailSynchronizationProcessor
 {
     /** Determines how many emails can be loaded from Nylas server at once */
-    const READ_BATCH_SIZE = 100;
+    public const READ_BATCH_SIZE = 100;
 
     /** Determines how often "Processed X of N emails" hint should be added to a log */
-    const READ_HINT_COUNT = 500;
+    public const READ_HINT_COUNT = 500;
 
     /** Determines how often the clearing of outdated folders routine should be executed */
-    const CLEANUP_EVERY_N_RUN = 100;
+    public const CLEANUP_EVERY_N_RUN = 100;
 
     /** Max time in seconds between saved DB batches */
-    const DB_BATCH_TIME = 60;
+    public const DB_BATCH_TIME = 60;
 
     /** Time limit to sync origin in seconds */
-    const MAX_ORIGIN_SYNC_TIME = 60;
-    /* @var NylasEmailRemoveManager */
-    private $removeManager;
-    /** @var NylasClient $nylasClient */
-    private $nylasClient;
-    /** @var NylasEmailManager */
-    private $nyalsEmailManager;
-    /** @var string $emailSyncInterval */
-    private $emailSyncInterval;
-    /** @var EmailActivityListProvider */
-    private $emailActivityProvider;
-    /** @var ActivityManager */
-    private $activityManager;
+    public const MAX_ORIGIN_SYNC_TIME = 60;
 
-    /** @var */
-    private $lastEmailSyncDate;
+    private NylasEmailRemoveManager $removeManager;
+
+    private NylasClient $nylasClient;
+
+    private NylasEmailManager $nyalsEmailManager;
+
+    private string $emailSyncInterval;
+
+    private EmailActivityListProvider $emailActivityProvider;
+
+    private ActivityManager $activityManager;
+
+    private ?\DateTime $lastEmailSyncDate = null;
 
     /**
-     * NylasEmailSynchronizationProcessor constructor.
-     * @param EntityManager $em
-     * @param EmailEntityBuilder $emailEntityBuilder
-     * @param KnownEmailAddressCheckerInterface $knownEmailAddressChecker
-     * @param NylasEmailRemoveManager $removeManager
-     * @param NylasClient $nylasClient
-     * @param NylasEmailManager $nylasEmailManager
-     * @param string $emailSyncInterval
-     * @param EmailActivityListProvider $activityListProvider
-     * @param ActivityManager $activityManager
+     * Constructor for NylasEmailSynchronizationProcessor.
+     *
+     * @param EntityManagerInterface             $em                        The entity manager
+     * @param EmailEntityBuilder                $emailEntityBuilder        The email entity builder
+     * @param KnownEmailAddressCheckerInterface $knownEmailAddressChecker The known email address checker
+     * @param NylasEmailRemoveManager           $removeManager             The remove manager
+     * @param NylasClient                       $nylasClient               The Nylas client
+     * @param NylasEmailManager                 $nylasEmailManager         The Nylas email manager
+     * @param string                            $emailSyncInterval         The email sync interval
+     * @param EmailActivityListProvider         $activityListProvider      The activity list provider
+     * @param ActivityManager                   $activityManager           The activity manager
      */
     public function __construct(
         EntityManagerInterface $em,
@@ -86,24 +109,28 @@ class NylasEmailSynchronizationProcessor extends AbstractEmailSynchronizationPro
         string $emailSyncInterval,
         EmailActivityListProvider $activityListProvider,
         ActivityManager $activityManager
-    )
-    {
+    ) {
         parent::__construct($em, $emailEntityBuilder, $knownEmailAddressChecker);
-        $this->removeManager         = $removeManager;
-        $this->nylasClient           = $nylasClient;
-        $this->nyalsEmailManager     = $nylasEmailManager;
-        $this->emailSyncInterval     = $emailSyncInterval;
+        $this->removeManager = $removeManager;
+        $this->nylasClient = $nylasClient;
+        $this->nyalsEmailManager = $nylasEmailManager;
+        $this->emailSyncInterval = $emailSyncInterval;
         $this->emailActivityProvider = $activityListProvider;
-        $this->activityManager       = $activityManager;
+        $this->activityManager = $activityManager;
     }
 
     /**
-     * @param EmailOrigin $origin
-     * @param \DateTime   $syncStartTime
+     * Process email synchronization.
+     *
+     * @param EmailOrigin              $origin          The email origin
+     * @param mixed                    $syncStartTime   The sync start time
+     * @param EmailSyncNotificationBag $notificationBag The notification bag
+     *
+     * @return void
      */
-    public function process(EmailOrigin $origin, $syncStartTime, EmailSyncNotificationBag $notificationBag)
+    public function process(EmailOrigin $origin, $syncStartTime, EmailSyncNotificationBag $notificationBag): void
     {
-        if ($origin && $origin->getAccountId() !== null) {
+        if ($origin instanceof NylasEmailOrigin && $origin->getAccountId() !== null) {
             // make sure that the entity builder is empty
             $this->emailEntityBuilder->clear();
 
@@ -122,20 +149,17 @@ class NylasEmailSynchronizationProcessor extends AbstractEmailSynchronizationPro
                     $this->logger->info(sprintf('The folder "%s" is selected.', $emailFolder->getFullName()));
 
                     // register the current folder in the entity builder
-                    /** @var EmailFolder $emailFolder */
                     $this->emailEntityBuilder->setFolder($emailFolder);
 
                     // sync emails using this search query
                     $this->lastEmailSyncDate = $this->syncEmails($emailFolder);
 
-                    $startDate      = $this->lastEmailSyncDate;
-                    if($startDate) {
-
+                    $startDate = $this->lastEmailSyncDate;
+                    if ($startDate) {
                         $checkStartDate = clone $startDate;
                         $checkStartDate->modify('-6 month');
                     }
 
-                    //$this->removeManager->removeRemotelyRemovedEmails($emailFolder, $this->nylasClient);
                     $this->logger->info(
                         sprintf('Sync process completed successfully.')
                     );
@@ -150,7 +174,7 @@ class NylasEmailSynchronizationProcessor extends AbstractEmailSynchronizationPro
                         sprintf('The folder "%s" has unsupported email format and was skipped and disabled.', $emailFolder->getFullName())
                     );
                 } finally {
-                    if(!$this->em->isOpen()) {
+                    if (!$this->em->isOpen()) {
                         $this->em = $this->em->create(
                             $this->em->getConnection(),
                             $this->em->getConfiguration()

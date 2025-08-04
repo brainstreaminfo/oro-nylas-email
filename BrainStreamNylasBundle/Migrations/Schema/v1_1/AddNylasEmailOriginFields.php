@@ -1,5 +1,17 @@
 <?php
 
+/**
+ * Add Nylas Email Origin Fields Migration.
+ *
+ * This file is part of the BrainStream Nylas Bundle.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Migrations\Schema\v1_1
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
+
 namespace BrainStream\Bundle\NylasBundle\Migrations\Schema\v1_1;
 
 use Doctrine\DBAL\Schema\Schema;
@@ -7,13 +19,37 @@ use Oro\Bundle\EntityExtendBundle\EntityConfig\ExtendScope;
 use Oro\Bundle\MigrationBundle\Migration\Migration;
 use Oro\Bundle\MigrationBundle\Migration\QueryBag;
 
+/**
+ * Add Nylas Email Origin Fields Migration.
+ *
+ * Migration to add Nylas-specific fields to the email origin table.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Migrations\Schema\v1_1
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
 class AddNylasEmailOriginFields implements Migration
 {
+    /**
+     * Get migration version.
+     *
+     * @return string
+     */
     public function getMigrationVersion(): string
     {
         return 'v1_1';
     }
 
+    /**
+     * Up migration.
+     *
+     * @param Schema   $schema The schema
+     * @param QueryBag $queries The query bag
+     *
+     * @return void
+     */
     public function up(Schema $schema, QueryBag $queries): void
     {
         // Ensure NylasEmailOrigin is recognized as extendable
@@ -36,6 +72,13 @@ class AddNylasEmailOriginFields implements Migration
         $this->addFields($schema);
     }
 
+    /**
+     * Add fields to the schema.
+     *
+     * @param Schema $schema The schema
+     *
+     * @return void
+     */
     private function addFields(Schema $schema): void
     {
         $table = $schema->getTable('oro_email_origin');

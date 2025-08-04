@@ -1,81 +1,83 @@
 <?php
 
+/**
+ * Nylas Email DTO.
+ *
+ * This file is part of the BrainStream Nylas Bundle.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Manager\DTO
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
 
 namespace BrainStream\Bundle\NylasBundle\Manager\DTO;
 
 use Oro\Bundle\EmailBundle\Decoder\ContentDecoder;
 use Oro\Bundle\EmailBundle\Model\EmailHeader;
-use BrainStream\Bundle\NylasBundle\Service\NylasClient;
 
 /**
- * Class Email
- * @package BrainStream\Bundle\NylasBundle\Manager\DTO
+ * Nylas Email DTO.
+ *
+ * Data Transfer Object for Nylas email data.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Manager\DTO
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
  */
 class Email extends EmailHeader
 {
-    /** @var bool */
-    const FORMAT_TEXT = false;
+    public const FORMAT_TEXT = false;
 
-    /** @var bool */
-    const FORMAT_HTML = true;
+    public const FORMAT_HTML = true;
 
-    /** @var string */
-    const EMAIL_EMPTY_BODY_CONTENT = "\n";
+    public const EMAIL_EMPTY_BODY_CONTENT = "\n";
 
-    /**
-     * @var array
-     */
-    private $message = [];
+    private array $message = [];
 
-    /** @var bool */
-    private $unread;
+    private ?string $id = null;
 
-    /** @var NylasClient */
-   // private $client;
+    private bool $unread = false;
 
-    /** @var bool */
-    private $hasAttachment;
+    private bool $hasAttachment = false;
 
-    /** @var string */
-    private $uid;
+    private string $uid = '';
 
-    /** @var bool */
-    private $has_attachments;
+    private ?EmailBody $body = null;
 
-    private $body;
-
-    private $attachments;
-
+    private ?array $attachments = null;
 
     /**
-     * Email constructor.
+     * Constructor for Email DTO.
      *
-     * @param $message
+     * @param array $message The email message data
      */
-    public function __construct($message)
+    public function __construct(array $message)
     {
         $this->message = $message;
-        //$this->client = $client;
     }
 
     /**
-     * Get id
+     * Get id.
      *
-     * @return string
+     * @return string|null
      */
-    public function getId()
+    public function getId(): ?string
     {
         return $this->id;
     }
 
     /**
-     * Set item id
+     * Set item id.
      *
-     * @param string $id
+     * @param string $id The id
      *
      * @return self
      */
-    public function setId($id)
+    public function setId(string $id): self
     {
         $this->id = $id;
 
@@ -83,38 +85,46 @@ class Email extends EmailHeader
     }
 
     /**
-     * @return bool
+     * Get unread status.
+     *
+     * @return bool|null
      */
-    public function getUnread()
+    public function getUnread(): ?bool
     {
         return $this->unread;
     }
 
     /**
-     * @param bool $unread
+     * Set unread status.
      *
-     * @return $this
+     * @param bool $unread The unread status
+     *
+     * @return self
      */
-    public function setUnread($unread)
+    public function setUnread(bool $unread): self
     {
         $this->unread = $unread;
         return $this;
     }
 
     /**
-     * @return bool
+     * Get has attachment status.
+     *
+     * @return bool|null
      */
-    public function getHasAttachment()
+    public function getHasAttachment(): ?bool
     {
         return $this->hasAttachment;
     }
 
     /**
-     * @param $hasAttachment
+     * Set has attachment status.
      *
-     * @return $this
+     * @param bool $hasAttachment The has attachment status
+     *
+     * @return self
      */
-    public function setHasAttachment($hasAttachment)
+    public function setHasAttachment(bool $hasAttachment): self
     {
         $this->hasAttachment = $hasAttachment;
 
@@ -122,11 +132,11 @@ class Email extends EmailHeader
     }
 
     /**
-     * Get email body
+     * Get email body.
      *
      * @return EmailBody
      */
-    public function getBody()
+    public function getBody(): EmailBody
     {
         if ($this->body === null) {
             $this->body = new EmailBody();
@@ -138,14 +148,14 @@ class Email extends EmailHeader
     }
 
     /**
-     * Get email attachments
+     * Get email attachments.
      *
      * @return EmailAttachment[]
      */
-    public function getAttachments()
+    public function getAttachments(): array
     {
         if ($this->attachments === null) {
-            $this->attachments = array();
+            $this->attachments = [];
             $attachment = $this->message['attachments'];
             if ($this->getBody()->getContent() === self::EMAIL_EMPTY_BODY_CONTENT) {
                 $attachments = $attachment === null ? [] : [$attachment];
@@ -177,39 +187,48 @@ class Email extends EmailHeader
     }
 
     /**
-     * @return string
+     * Get uid.
+     *
+     * @return string|null
      */
-    public function getUid()
+    public function getUid(): ?string
     {
         return $this->uid;
     }
 
     /**
-     * @param string $uid
+     * Set uid.
      *
-     * @return $this
+     * @param string $uid The uid
+     *
+     * @return self
      */
-    public function setUid($uid)
+    public function setUid(string $uid): self
     {
         $this->uid = $uid;
         return $this;
     }
 
     /**
+     * Check if has attachments.
+     *
      * @return bool
      */
-    public function isHasAttachments()
+    public function isHasAttachments(): bool
     {
-        return $this->has_attachments;
+        return $this->hasAttachment;
     }
 
     /**
-     * @param bool $has_attachments
+     * Set has attachments.
+     *
+     * @param bool $hasAttachments The has attachments status
+     *
+     * @return self
      */
-    public function setHasAttachments($has_attachments)
+    public function setHasAttachments(bool $hasAttachments): self
     {
-        $this->has_attachments = $has_attachments;
+        $this->hasAttachment = $hasAttachments;
         return $this;
     }
-
 }

@@ -1,10 +1,29 @@
 <?php
 
+/**
+ * Nylas Email Folder Entity.
+ *
+ * This file is part of the BrainStream Nylas Bundle.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Entity
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
+
 namespace BrainStream\Bundle\NylasBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Oro\Bundle\EmailBundle\Entity\EmailFolder;
 
+/**
+ * Nylas Email Folder Entity.
+ *
+ * Extends the base email folder entity for Nylas integration.
+ *
+ * @package BrainStream\Bundle\NylasBundle\Entity
+ */
 #[ORM\Entity(repositoryClass: "BrainStream\Bundle\NylasBundle\Entity\Repository\EmailFolderRepository")]
 #[ORM\Table(name: "oro_email_folder")]
 class NylasEmailFolder extends EmailFolder
@@ -14,9 +33,9 @@ class NylasEmailFolder extends EmailFolder
     protected $folderUid;
 
     /**
-     * Get folder UID
+     * Get folder UID.
      *
-     * @return string|null
+     * @return string|null The folder UID or null if not set
      */
     public function getFolderUid(): ?string
     {
@@ -24,9 +43,11 @@ class NylasEmailFolder extends EmailFolder
     }
 
     /**
-     * Set folder UID
+     * Set folder UID.
      *
-     * @param string|null $folderUid
+     * @param string|null $folderUid The folder UID to set
+     *
+     * @return void
      */
     public function setFolderUid(?string $folderUid): void
     {

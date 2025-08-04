@@ -1,5 +1,17 @@
 <?php
 
+/**
+ * Nylas Email Origin Listener.
+ *
+ * This file is part of the BrainStream Nylas Bundle.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\EventListener
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
+
 namespace BrainStream\Bundle\NylasBundle\EventListener;
 
 use Doctrine\ORM\Event\PostPersistEventArgs;
@@ -8,18 +20,36 @@ use BrainStream\Bundle\NylasBundle\Entity\NylasEmailOrigin;
 use Oro\Bundle\EmailBundle\Entity\Mailbox;
 use Oro\Bundle\UserBundle\Entity\User;
 
+/**
+ * Nylas Email Origin Listener.
+ *
+ * Listener for handling Nylas email origin entity lifecycle events.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\EventListener
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
 class NylasEmailOriginListener
 {
     private LoggerInterface $logger;
 
+    /**
+     * Constructor.
+     *
+     * @param LoggerInterface $logger The logger service
+     */
     public function __construct(LoggerInterface $logger)
     {
         $this->logger = $logger;
     }
 
     /**
-     * ref: create mailbox on post persist of NylasEmailOrigin
-     * @param PostPersistEventArgs $args
+     * Create mailbox on post persist of NylasEmailOrigin.
+     *
+     * @param PostPersistEventArgs $args The post persist event arguments
+     *
      * @return void
      * @throws \Exception
      */
@@ -48,14 +78,26 @@ class NylasEmailOriginListener
                 $this->logger->info('Mailbox already exists, skipping creation', ['mailbox_id' => $mailbox->getId()]);
             }
         } catch (\Exception $e) {
-            $this->logger->error('Error in NylasEmailOrigin postPersist', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+            $this->logger->error(
+                'Error in NylasEmailOrigin postPersist',
+                [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]
+            );
             throw $e;
         }
     }
 
+    /**
+     * Create a new mailbox instance.
+     *
+     * @param NylasEmailOrigin $entity   The Nylas email origin entity
+     * @param User             $userData The user data
+     *
+     * @return Mailbox
+     * @throws \LogicException
+     */
     private function createMailbox(NylasEmailOrigin $entity, User $userData): Mailbox
     {
         if (!$userData) {

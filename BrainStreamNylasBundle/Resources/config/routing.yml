@@ -1,9 +1,0 @@
-#brainstream_nylas:
-#    resource: "@BrainStreamNylasBundle/Controller/"
-#    type: attribute
-#    prefix: /
-
-#_oro_email_routes:
-#    resource: "@OroEmailBundle/Resources/config/oro/routing.yml"
-#    prefix: null
-

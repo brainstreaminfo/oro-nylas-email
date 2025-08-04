@@ -1,5 +1,17 @@
 <?php
 
+/**
+ * Nylas Client.
+ *
+ * This file is part of the BrainStream Nylas Bundle.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Service
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
+
 namespace BrainStream\Bundle\NylasBundle\Service;
 
 use Oro\Bundle\UserBundle\Entity\User;
@@ -17,30 +29,52 @@ use Oro\Bundle\UserBundle\Form\Type\EmailSettingsType;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 
-
+/**
+ * Nylas Client.
+ *
+ * Service for managing Nylas API client operations and email folder management.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Service
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
 class NylasClient
 {
     /**
-     * Nylas NylasApiClient Instance
-     * @var NylasClient
+     * Nylas NylasApiClient Instance.
      */
-    public $nylasClient;
+    public NylasApiClient $nylasClient;
 
-    /** @var FormFactoryInterface */
-    private $formFactory;
+    /**
+     * Form factory interface.
+     */
+    private FormFactoryInterface $formFactory;
 
-    /** @var NylasEmailOrigin */
-    private $emailOrigin;
+    /**
+     * Email origin.
+     */
+    private NylasEmailOrigin $emailOrigin;
 
-    public $downloadPath;
-    /** @var array */
-    protected $possibleJunkFolderNameMap = [
+    /**
+     * Download path.
+     */
+    public string $downloadPath;
+
+    /**
+     * Possible junk folder name map.
+     */
+    protected array $possibleJunkFolderNameMap = [
         'Junk',
         'Spam',
         'E-mail de Lixo'
     ];
-    /** @var array */
-    protected $flagTypeMap = [
+
+    /**
+     * Flag type map.
+     */
+    protected array $flagTypeMap = [
         FolderType::INBOX,
         FolderType::SENT,
         //FolderType::DRAFTS,
@@ -48,32 +82,46 @@ class NylasClient
         FolderType::SPAM,
     ];
 
-    private $entityManager;
+    /**
+     * Entity manager.
+     */
+    private EntityManagerInterface $entityManager;
 
-    private $logger;
+    /**
+     * Logger.
+     */
+    private LoggerInterface $logger;
 
     /**
      * NylasClient constructor.
      *
-     * @param bool                 $debug_mode
-     * @param string               $log_dir
-     * @param string               $configService
-     * @param FormFactoryInterface $formFactory
-     * @param string               $attachmentDownloadPath
+     * @param bool                   $debug_mode             The debug mode
+     * @param string                 $log_dir                The log directory
+     * @param ConfigService          $configService          The config service
+     * @param FormFactoryInterface   $formFactory            The form factory
+     * @param string                 $attachmentDownloadPath The attachment download path
+     * @param EntityManagerInterface $entityManager          The entity manager
+     * @param LoggerInterface        $logger                 The logger
      */
-    public function __construct($debug_mode, $log_dir, ConfigService $configService, FormFactoryInterface $formFactory, $attachmentDownloadPath, EntityManagerInterface $entityManager, LoggerInterface $logger)
-    {
-        $options =
-            [
-                'debug'         => $debug_mode,
-                'log_file'      => $log_dir . '/nylas.log',
-                'client_id'     => $configService->getClientId(),
-                'region'        => $configService->getRegion(),
-                'api_key'       => $configService->getClientSecret()//same as client_secret, name changed to api_key in new nylas api
-            ];
+    public function __construct(
+        bool $debug_mode,
+        string $log_dir,
+        ConfigService $configService,
+        FormFactoryInterface $formFactory,
+        string $attachmentDownloadPath,
+        EntityManagerInterface $entityManager,
+        LoggerInterface $logger
+    ) {
+        $options = [
+            'debug' => $debug_mode,
+            'log_file' => $log_dir . '/nylas.log',
+            'client_id' => $configService->getClientId(),
+            'region' => strtolower($configService->getRegion()),
+            'api_key' => $configService->getClientSecret() //same as client_secret, name changed to api_key in new nylas api
+        ];
 
-        $this->nylasClient  = new NylasApiClient($options);
-        $this->formFactory  = $formFactory;
+        $this->nylasClient = new NylasApiClient($options);
+        $this->formFactory = $formFactory;
         //Create directory if not exist
         if (!is_dir($attachmentDownloadPath)) {
             mkdir($attachmentDownloadPath, 0777, true);
@@ -84,24 +132,26 @@ class NylasClient
     }
 
     /**
-     * set email origin
+     * Set email origin.
      *
-     * @param NylasEmailOrigin
+     * @param EmailOrigin $emailOrigin The email origin
+     *
+     * @return void
      */
-    public function setEmailOrigin(EmailOrigin $emailOrigin)
+    public function setEmailOrigin(EmailOrigin $emailOrigin): void
     {
         $this->emailOrigin = $emailOrigin;
         $this->nylasClient->Options->setGrantId($emailOrigin->getAccountId());
     }
 
     /**
-     * Get folder list based on organization unit
+     * Get folder list based on organization unit.
      *
-     * @param $nylasFolderCounter
+     * @param int $nylasFolderCounter The folder counter
      *
-     * @return array|null
+     * @return array|null The folders
      */
-    public function getFolders($nylasFolderCounter): ?array
+    public function getFolders(int $nylasFolderCounter): ?array
     {
         $counter = 0;
         //Fetch account details
@@ -119,8 +169,14 @@ class NylasClient
         return $emailFolders;
     }
 
-
-    public function getJsonFolders($nylasFolderCounter)
+    /**
+     * Get JSON folders.
+     *
+     * @param int $nylasFolderCounter The folder counter
+     *
+     * @return array|null
+     */
+    public function getJsonFolders(int $nylasFolderCounter): ?array
     {
         $counter = 0;
         //Fetch account details
@@ -138,52 +194,51 @@ class NylasClient
         return $formFolders;
     }
 
-
     /**
-     * Fetch account folders/labels
+     * Fetch account folders/labels.
      *
-     * @param $organizationUnit
+     * @param string $organizationUnit The organization unit
      *
-     * @return array|mixed
+     * @return array
      */
-    public function getAccountFolders($organizationUnit)
+    public function getAccountFolders(string $organizationUnit): array
     {
         //Fetch folder list
         $responseFolders = [[]];
-        $limit           = 100;
-        $start           = 0;
+        $limit = 100;
+        $start = 0;
         //below code modified as now there is no concept if label and folder, only folder type is there
         do {
             $formFolders = $this->nylasClient->Folders->Folder->list(
                 $this->nylasClient->Options->getGrantId(),
             );
-            $parentFolders = array_filter($formFolders, function($folder) {
+            $parentFolders = array_filter($formFolders, function ($folder) {
                 return empty($folder->parent_id);
             });
 
             $start += $limit;
-            //$responseFolders[] = $formFolders;
             $responseFolders = array_merge($responseFolders, $parentFolders);
         } while (count($formFolders) >= $limit);
-        //$responseFolders = array_merge(...$responseFolders);
+
         return $responseFolders;
     }
 
     /**
-     * @param      $tree
-     * @param null $root
+     * Assign parents to folders.
+     *
+     * @param array $folders The folders
      *
      * @return array|null
      */
-    public function assignParents($folders): ?array
+    public function assignParents(array $folders): ?array
     {
         foreach ($folders as $key => $value) {
             $display_name = str_replace("\\", "/", $value['name']);
             if (strpos($display_name, '/')) {
                 $explode = explode('/', $display_name);
                 array_pop($explode);
-                $searchElement           = implode('/', $explode);
-                $parentKey               = array_search($searchElement, array_column($folders, 'name'), true);
+                $searchElement = implode('/', $explode);
+                $parentKey = array_search($searchElement, array_column($folders, 'name'), true);
                 $folders[$key]['parent'] = $parentKey;
             }
         }
@@ -191,11 +246,13 @@ class NylasClient
     }
 
     /**
-     * @param $folders
+     * Parse tree structure.
      *
-     * @return array
+     * @param array $folders The folders
+     *
+     * @return array|null
      */
-    private function parseTree($folders): ?array
+    private function parseTree(array $folders): ?array
     {
         foreach ($folders as $key => $value) {
             if (isset($value['parent'])) {
@@ -212,14 +269,14 @@ class NylasClient
     }
 
     /**
-     * Set parent child in EmailFolder entity
+     * Set parent child in EmailFolder entity.
      *
-     * @param      $formFolders
-     * @param null $parent
+     * @param array                $formFolders The form folders
+     * @param EmailFolderModel|null $parent      The parent folder model
      *
      * @return array
      */
-    public function createParentChild($formFolders, $parent = null)
+    public function createParentChild(array $formFolders, ?EmailFolderModel $parent = null): array
     {
         $emailFolderModels = [];
 
@@ -260,11 +317,23 @@ class NylasClient
     }
 
     /**
-     * @param ArrayCollection|EmailFolder[] $folders
-     * @param                               $folderData
+     * Get folder collection.
+     *
+     * @param bool                $byPassOutdatedAt Whether to bypass outdated at
+     * @param ArrayCollection     $folders          The folders
+     * @param array|null          $folderData       The folder data
+     * @param int                 $maxDepth         The max depth
+     * @param bool                $hasChildren      Whether has children
+     *
+     * @return array
      */
-    public function getFolderCollection($byPassOutdatedAt, $folders, &$folderData, $maxDepth = 10, $hasChildren = false): array
-    {
+    public function getFolderCollection(
+        bool $byPassOutdatedAt,
+        ArrayCollection $folders,
+        ?array &$folderData,
+        int $maxDepth = 10,
+        bool $hasChildren = false
+    ): array {
         if ($folderData === null) {
             $folderData = [];
         }
@@ -297,19 +366,19 @@ class NylasClient
                 }
 
                 $folderItem = [
-                    'id'          => $folderId,
-                    'fullName'    => $folder->getFullName(),
-                    'name'        => $folder->getName(),
-                    'folderUid'   => $folderUid,
-                    'type'        => $folder->getType() ?? FolderType::OTHER,
-                    'owner'       => $folder->getOrigin()->getOwner()->getFullName(),
+                    'id' => $folderId,
+                    'fullName' => $folder->getFullName(),
+                    'name' => $folder->getName(),
+                    'folderUid' => $folderUid,
+                    'type' => $folder->getType() ?? FolderType::OTHER,
+                    'owner' => $folder->getOrigin()->getOwner()->getFullName(),
                     'syncEnabled' => $folder->isSyncEnabled(),
                 ];
 
                 if ($folder->getSubFolders()->count() > 0 and $maxDepth > 1) {
                     $folderItem['children'] = $this->getFolderCollection(
                         $byPassOutdatedAt,
-                        $folder->getSubFolders(),
+                        new ArrayCollection($folder->getSubFolders()->toArray()),
                         $folderItem['children'],
                         $maxDepth - 1,
                         true
@@ -334,12 +403,13 @@ class NylasClient
     }
 
     /**
-     * @param $formParentName
-     * @param $accountTypeModel
+     * Prepare form.
      *
-     * @return null|\Symfony\Component\Form\Form|FormInterface
+     * @param AccountTypeModel $accountTypeModel The account type model
+     *
+     * @return FormInterface
      */
-    public function prepareForm($accountTypeModel)
+    public function prepareForm(AccountTypeModel $accountTypeModel): FormInterface
     {
         $data = $user = new User();
         $data->setImapAccountType($accountTypeModel);
@@ -351,17 +421,18 @@ class NylasClient
         );
         $form->setData($data);
 
-
         return $form;
     }
 
     /**
-     * @param $type
-     * @param $oauthEmailOrigin
+     * Create account model.
      *
-     * @return \Oro\Bundle\ImapBundle\Form\Model\AccountTypeModel
+     * @param string        $type             The type
+     * @param NylasEmailOrigin $oauthEmailOrigin The OAuth email origin
+     *
+     * @return AccountTypeModel
      */
-    public function createAccountModel($type, $oauthEmailOrigin): AccountTypeModel
+    public function createAccountModel(string $type, NylasEmailOrigin $oauthEmailOrigin): AccountTypeModel
     {
         $accountTypeModel = new AccountTypeModel();
         $accountTypeModel->setAccountType($type);
@@ -370,19 +441,22 @@ class NylasClient
         return $accountTypeModel;
     }
 
-
     /**
-     * @param NylasEmailFolder $emailFolder
-     * @return array[]
+     * Get folder message IDs.
+     *
+     * @param NylasEmailFolder $emailFolder The email folder
+     *
+     * @return array
+     *
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function getFolderMessageIds(NylasEmailFolder $emailFolder)
+    public function getFolderMessageIds(NylasEmailFolder $emailFolder): array
     {
         $responseMessage = [[]];
-        $limit           = 500;
-        $start           = 0;
+        $limit = 500;
+        $start = 0;
         do {
-            $messages          = $this->nylasClient->Messages->Message->list(
+            $messages = $this->nylasClient->Messages->Message->list(
                 $this->nylasClient->nylasClient->Options->getGrantId(),
                 [
                     'in'     => $emailFolder->getFolderUid(),
@@ -400,40 +474,56 @@ class NylasClient
     }
 
     /**
-     * Get message body content
+     * Get message body content.
      *
-     * @param $messageId
+     * @param string $messageId The message ID
      *
      * @return array
      */
-    public function getMessageBody($messageId): array
+    public function getMessageBody(string $messageId): array
     {
-        $message = $this->nylasClient->Messages->Message->find($this->nylasClient->Options->getGrantId(), $messageId, ['fields' => 'include_headers']);
+        $message = $this->nylasClient->Messages->Message->find(
+            $this->nylasClient->Options->getGrantId(),
+            $messageId,
+            ['fields' => 'include_headers']
+        );
 
         return $message;
     }
 
     /**
-     * Mark message as unread
+     * Mark message as unread.
      *
-     * @param $messageId
-     * @param $isSeen
+     * @param string $messageId The message ID
+     * @param bool   $isSeen    Whether the message is seen
+     *
+     * @return void
      */
-    public function updateMailSeenStatus($messageId, $isSeen = false)
+    public function updateMailSeenStatus(string $messageId, bool $isSeen = false): void
     {
         if ($isSeen) {
-            $this->nylasClient->Messages->Message->update($this->nylasClient->Options->getGrantId(), $messageId, ['unread' => false]);
+            $this->nylasClient->Messages->Message->update(
+                $this->nylasClient->Options->getGrantId(),
+                $messageId,
+                ['unread' => false]
+            );
         } else {
-            $this->nylasClient->Messages->Message->update($this->nylasClient->Options->getGrantId(), $messageId, ['unread' => true]);
+            $this->nylasClient->Messages->Message->update(
+                $this->nylasClient->Options->getGrantId(),
+                $messageId,
+                ['unread' => true]
+            );
         }
     }
+
     /**
-     * Guess folder type based on it's flags
+     * Guess folder type based on it's flags.
      *
-     * @param array $srcFolder
+     * @param array $srcFolder The source folder
+     *
      * @return string
      */
-    public function guessFolderType($srcFolder)
+    public function guessFolderType(array $srcFolder): string
     {
         $type = FolderType::OTHER;
         foreach ($this->flagTypeMap as $flagType) {
@@ -450,14 +540,14 @@ class NylasClient
         return $type;
     }
 
-
     /**
-     * Try to guess sent folder by folder name
+     * Try to guess sent folder by folder name.
      *
-     * @param string $name
+     * @param string $name The folder name
+     *
      * @return bool
      */
-    public function guessJunkTypeByName($name)
+    public function guessJunkTypeByName(string $name): bool
     {
         if (in_array($name, $this->possibleJunkFolderNameMap, true)) {
             return true;
@@ -466,14 +556,15 @@ class NylasClient
     }
 
     /**
-     * Guess api version based on uid format
+     * Guess api version based on uid format.
      *
-     * @param $uid
+     * @param string $uid The UID
+     *
      * @return string
      */
-    public function guessApiVersion($uid)
+    public function guessApiVersion(string $uid): string
     {
-        if (strlen($uid) >= 15 &&  strlen($uid) <= 20) {
+        if (strlen($uid) >= 15 && strlen($uid) <= 20) {
             return 'v3';
         } else {
             return 'v2';
@@ -481,15 +572,15 @@ class NylasClient
     }
 
     /**
-     * Get Massage Id from Headers
+     * Get Massage Id from Headers.
      *
-     * @param array  $nylasEmailContent
-     * @param string $name - Key in $headers
-     * @param string $defaultVal
+     * @param array  $nylasEmailContent The Nylas email content
+     * @param string $name              Key in $headers
+     * @param string $defaultVal        The default value
      *
      * @return string
      */
-    public function getMessageId(array $nylasEmailContent, $name, $defaultVal)
+    public function getMessageId(array $nylasEmailContent, string $name, string $defaultVal): string
     {
         $header = $nylasEmailContent['headers'];
         if ($header === false) {
@@ -503,15 +594,16 @@ class NylasClient
         return $messageId;
     }
 
-
     /**
-     * Get message object from email entity
+     * Get message object from email entity.
      *
-     * @param $entity
+     * @param mixed $email The email entity
+     *
      * @return array
+     *
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function getMessage($email)
+    public function getMessage($email): array
     {
         $subject = $email->getSubject();
         $fromName = $email->getFromName();
@@ -527,12 +619,16 @@ class NylasClient
             }
         }
 
-        $message = $this->nylasClient->Messages->Message->find($this->nylasClient->Options->getGrantId(), '', [
-            'subject' => $subject,
-            'from' => $fromEmail,
-            'to' => rtrim(implode(',', $toEmails)),
-            'fields' => 'include_headers'
-        ]);
+        $message = $this->nylasClient->Messages->Message->find(
+            $this->nylasClient->Options->getGrantId(),
+            '',
+            [
+                'subject' => $subject,
+                'from' => $fromEmail,
+                'to' => rtrim(implode(',', $toEmails)),
+                'fields' => 'include_headers'
+            ]
+        );
 
         return $message;
     }

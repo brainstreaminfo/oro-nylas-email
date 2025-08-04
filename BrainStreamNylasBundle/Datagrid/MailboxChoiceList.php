@@ -1,9 +1,18 @@
 <?php
 
 /**
+ * Nylas Mailbox Choice List.
+ *
+ * This file is part of the BrainStream Nylas Bundle.
  * Used to hide local mailbox at https://oronylasext.local/email/user-emails
  *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Datagrid
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
  */
+
 namespace BrainStream\Bundle\NylasBundle\Datagrid;
 
 use Oro\Bundle\EmailBundle\Datagrid\MailboxChoiceList as BaseMailboxChoiceList;
@@ -13,17 +22,32 @@ use Oro\Bundle\OrganizationBundle\Entity\Organization;
 use Oro\Bundle\SecurityBundle\Authentication\TokenAccessorInterface;
 use Oro\Bundle\EmailBundle\Datagrid\MailboxNameHelper;
 
+/**
+ * Nylas Mailbox Choice List.
+ *
+ * Extends the base mailbox choice list to hide local mailboxes.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Datagrid
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
 class MailboxChoiceList extends BaseMailboxChoiceList
 {
-    /** @var TokenAccessorInterface */
-    private $tokenAccessor;
+    private TokenAccessorInterface $tokenAccessor;
 
-    /** @var MailboxManager */
-    private $mailboxManager;
+    private MailboxManager $mailboxManager;
 
-    /** @var MailboxNameHelper */
-    private $mailboxNameHelper;
+    private MailboxNameHelper $mailboxNameHelper;
 
+    /**
+     * Constructor for MailboxChoiceList.
+     *
+     * @param TokenAccessorInterface $tokenAccessor     The token accessor
+     * @param MailboxManager         $mailboxManager    The mailbox manager
+     * @param MailboxNameHelper      $mailboxNameHelper The mailbox name helper
+     */
     public function __construct(
         TokenAccessorInterface $tokenAccessor,
         MailboxManager $mailboxManager,
@@ -39,7 +63,7 @@ class MailboxChoiceList extends BaseMailboxChoiceList
      *
      * @return array
      */
-    public function getChoiceList()
+    public function getChoiceList(): array
     {
         /** @var Mailbox[] $systemMailboxes */
         $systemMailboxes = $this->mailboxManager->findAvailableMailboxes(
@@ -102,9 +126,11 @@ class MailboxChoiceList extends BaseMailboxChoiceList
     }
 
     /**
+     * Get organization.
+     *
      * @return Organization|null
      */
-    protected function getOrganization()
+    protected function getOrganization(): ?Organization
     {
         return $this->tokenAccessor->getOrganization();
     }

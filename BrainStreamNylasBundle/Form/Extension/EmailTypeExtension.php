@@ -1,7 +1,18 @@
 <?php
+
 /**
- * Use to hide local mailbox at https://oronylasext.local/email/user-emails ->compose email ->from
- * this is used along with template override at BrainStreamNylasBundle/Resources/views/Form/fields.html.twig
+ * Email Type Extension.
+ *
+ * This file is part of the BrainStream Nylas Bundle.
+ *
+ * Used to hide local mailbox at email compose form.
+ * This is used along with template override at BrainStreamNylasBundle/Resources/views/Form/fields.html.twig
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Form\Extension
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
  */
 
 namespace BrainStream\Bundle\NylasBundle\Form\Extension;
@@ -11,23 +22,51 @@ use Symfony\Component\Form\AbstractTypeExtension;
 use Symfony\Component\Form\FormBuilderInterface;
 use Doctrine\ORM\EntityManagerInterface;
 
+/**
+ * Email Type Extension.
+ *
+ * Extension for hiding local mailbox in email compose form.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Form\Extension
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
 class EmailTypeExtension extends AbstractTypeExtension
 {
-    private $em;
+    private EntityManagerInterface $em;
 
+    /**
+     * Constructor for EmailTypeExtension.
+     *
+     * @param EntityManagerInterface $em The entity manager
+     */
     public function __construct(EntityManagerInterface $em)
     {
         $this->em = $em;
     }
 
+    /**
+     * Get extended types.
+     *
+     * @return iterable
+     */
     public static function getExtendedTypes(): iterable
     {
         return [EmailType::class];
     }
 
-    public function buildForm(FormBuilderInterface $builder, array $options)
+    /**
+     * Build the form.
+     *
+     * @param FormBuilderInterface $builder The form builder
+     * @param array                $options The form options
+     *
+     * @return void
+     */
+    public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        //return;
         $builder->addEventListener(
             \Symfony\Component\Form\FormEvents::PRE_SET_DATA,
             function (\Symfony\Component\Form\FormEvent $event) {
@@ -40,7 +79,6 @@ class EmailTypeExtension extends AbstractTypeExtension
 
                     // Fetch all Nylas origin IDs
                     $conn = $this->em->getConnection();
-                    //$nylasOriginIds = $conn->fetchFirstColumn("SELECT id FROM oro_email_origin WHERE name = 'nylasemailorigin'");
 
                     $nylasOrigins = $conn->fetchAllAssociative("SELECT id, mailbox_name FROM oro_email_origin WHERE name = 'nylasemailorigin'");
                     $nylasOriginMap = [];

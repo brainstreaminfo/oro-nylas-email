@@ -1,11 +1,21 @@
 <?php
 
+/**
+ * Nylas Email Folder Manager.
+ *
+ * This file is part of the BrainStream Nylas Bundle.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Manager
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
 
 namespace BrainStream\Bundle\NylasBundle\Manager;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManager;
-
 //use Oro\Bundle\EmailBundle\Entity\EmailFolder;
 use BrainStream\Bundle\NylasBundle\Entity\NylasEmailFolder;
 use Oro\Bundle\EmailBundle\Entity\EmailFolder;
@@ -14,31 +24,26 @@ use Oro\Bundle\EmailBundle\Model\FolderType;
 use Oro\Bundle\ImapBundle\Form\Model\EmailFolderModel;
 use BrainStream\Bundle\NylasBundle\Service\NylasClient;
 
-
 /**
- * Class NylasEmailFolderManager
+ * Nylas Email Folder Manager.
  *
- * @package BrainStream\Bundle\NylasBundle\Manager
+ * Manages Nylas email folder operations.
  *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Manager
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
  */
 class NylasEmailFolderManager
 {
-    /**
-     * @var NylasClient
-     */
-    protected $client;
-    /**
-     * @var EmailOrigin
-     */
-    protected $origin;
+    protected NylasClient $client;
 
-    /**
-     * @var EntityManager
-     */
-    protected $em;
+    protected EmailOrigin $origin;
 
-    /** @var array */
-    protected $flagTypeMap = [
+    protected EntityManager $em;
+
+    protected array $flagTypeMap = [
         FolderType::INBOX,
         FolderType::SENT,
         // FolderType::DRAFTS,
@@ -47,9 +52,11 @@ class NylasEmailFolderManager
     ];
 
     /**
-     * @param NylasClient $client
-     * @param EntityManager $em
-     * @param EmailOrigin $origin
+     * Constructor for NylasEmailFolderManager.
+     *
+     * @param NylasClient   $client The Nylas client
+     * @param EntityManager $em     The entity manager
+     * @param EmailOrigin   $origin The email origin
      */
     public function __construct(NylasClient $client, EntityManager $em, EmailOrigin $origin)
     {
@@ -59,24 +66,27 @@ class NylasEmailFolderManager
     }
 
     /**
+     * Get folders.
+     *
+     * @param bool $byPassOutdatedAt Whether to bypass outdated check
+     *
      * @return EmailFolder[]
      */
-    public function getFolders($byPassOutdatedAt = false)
+    public function getFolders(bool $byPassOutdatedAt = false): array
     {
         // retrieve folders from imap
         $emailFolderModels = $this->client->getFolders(5);
-        //echo 'emil forlder models';
+        //echo 'email folder models';
         //dump($emailFolderModels);
 
-        // transform folders into tree of models
+        // transform folders into tree of models, commented as we store top level folders only
         //$emailFolderModels = $this->processFolders($folders);
         if ($this->origin->getId()) {
-            //$this->em->refresh($this->origin);
-            // renew existing folders if origin already exists
+            // renew existing folders if origin already exists, referesh was causing issues so its removed
             $existingFolders = $this->getExistingFolders();
             /*echo 'existing folder======';
             dump($existingFolders);
-            echo "-------------------------------------";*/
+            */
 
             // merge synced and existing folders
             $emailFolderModels = $this->mergeFolders($emailFolderModels, $existingFolders);
@@ -87,13 +97,18 @@ class NylasEmailFolderManager
             $this->em->flush();
         }
 
-        return $this->extractEmailFolders($emailFolderModels);
+        return $this->extractEmailFolders($emailFolderModels)->toArray();
     }
 
     /**
-     * @param ArrayCollection|NylasEmailFolder[] $existingFolders
+     * Mark folders as outdated.
+     *
+     * @param ArrayCollection|NylasEmailFolder[] $existingFolders  The existing folders
+     * @param bool                               $byPassOutdatedAt Whether to bypass outdated check
+     *
+     * @return void
      */
-    protected function markAsOutdated($existingFolders, $byPassOutdatedAt = false)
+    protected function markAsOutdated($existingFolders, bool $byPassOutdatedAt = false): void
     {
         $outdatedAt = new \DateTime('now', new \DateTimeZone('UTC'));
 
@@ -106,22 +121,31 @@ class NylasEmailFolderManager
         }
     }
 
-    protected function mergeFolders($syncedFolderModels, &$existingEmailFolders)
+    /**
+     * Merge folders.
+     *
+     * @param array                              $syncedFolderModels   The synced folder models
+     * @param ArrayCollection|NylasEmailFolder[] $existingEmailFolders The existing email folders
+     *
+     * @return array
+     */
+    protected function mergeFolders(array $syncedFolderModels, &$existingEmailFolders): array
     {
         foreach ($syncedFolderModels as $syncedFolderModel) {
             $flagTypes = $this->flagTypeMap;
-            $f = $existingEmailFolders->filter(function ($emailFolder) use ($syncedFolderModel, $flagTypes) {
-                //ref:adbrain skip invalid types, skipped child folders for now, only parent folder will be saved
-                if ($emailFolder->getParentFolder()!=null) {
-                    //!$emailFolder instanceof NylasEmailFolder
-                    return false; // Skip invalid types
+            $f = $existingEmailFolders->filter(
+                function ($emailFolder) use ($syncedFolderModel, $flagTypes) {
+                    //ref:adbrain skip invalid types, skipped child folders for now, only parent folder will be saved
+                    if ($emailFolder->getParentFolder() != null) {
+                        return false; // Skip invalid types
+                    }
+                    if (in_array($emailFolder->getType(), $flagTypes)) {
+                        return ($emailFolder->getType() === $syncedFolderModel->getEmailFolder()->getType() && $emailFolder->getOrigin() === $syncedFolderModel->getEmailFolder()->getOrigin());
+                    } else {
+                        return strtolower($syncedFolderModel->getEmailFolder()->getName()) == 'draft' || ((strtolower($emailFolder->getName()) === strtolower(str_replace('_', ' ', $syncedFolderModel->getEmailFolder()->getName())) || strtolower($emailFolder->getName()) === strtolower($syncedFolderModel->getEmailFolder()->getName())) && $emailFolder->getOrigin() === $syncedFolderModel->getEmailFolder()->getOrigin() && strtolower($emailFolder->getType()) === FolderType::OTHER);
+                    }
                 }
-                if (in_array($emailFolder->getType(), $flagTypes)) {
-                    return ($emailFolder->getType() === $syncedFolderModel->getEmailFolder()->getType() && $emailFolder->getOrigin() === $syncedFolderModel->getEmailFolder()->getOrigin());
-                } else {
-                    return strtolower($syncedFolderModel->getEmailFolder()->getName()) == 'draft' || ((strtolower($emailFolder->getName()) === strtolower(str_replace('_', ' ', $syncedFolderModel->getEmailFolder()->getName())) || strtolower($emailFolder->getName()) === strtolower($syncedFolderModel->getEmailFolder()->getName())) && $emailFolder->getOrigin() === $syncedFolderModel->getEmailFolder()->getOrigin() && strtolower($emailFolder->getType()) === FolderType::OTHER);
-                }
-            });
+            );
             //ref:adbrain skip invalid types, skipped child folders for now, only parent folder will be saved
             if ($syncedFolderModel->getEmailFolder()->getParentFolder() != null) {
                 continue;
@@ -147,19 +171,20 @@ class NylasEmailFolderManager
                 $syncedFolderModel->setEmailFolder($emailFolder);
                 $existingEmailFolders->removeElement($emailFolder);
                 $emailFolderData = $this->em->getRepository(NylasEmailFolder::class)->find($emailFolder->getId());
-               // dump('new folder data...');
-               // dump($emailFolderData);
+                // dump('new folder data...');
+                // dump($emailFolderData);
                 if (!$emailFolderData) {
                     //echo 'email folder does not exist========='. $emailFolderData->getName();
                 }
-                if ($emailFolderData)
+                if ($emailFolderData) {
                     $emailFolderData->setFolderUid($syncedFolderModel->getUidValidity());
+                }
             }
 
             if ($syncedFolderModel->hasSubFolderModels()) {
                 $syncedFolderModel->setSubFolderModels(
                     $this->mergeFolders(
-                        $syncedFolderModel->getSubFolderModels(),
+                        $syncedFolderModel->getSubFolderModels()->toArray(),
                         $existingEmailFolders
                     )
                 );
@@ -170,7 +195,9 @@ class NylasEmailFolderManager
     }
 
     /**
-     * @param EmailFolderModel[]|ArrayCollection $emailFolderModels
+     * Extract email folders.
+     *
+     * @param EmailFolderModel[]|ArrayCollection $emailFolderModels The email folder models
      *
      * @return EmailFolder[]|ArrayCollection
      */
@@ -191,6 +218,8 @@ class NylasEmailFolderManager
     }
 
     /**
+     * Get existing folders.
+     *
      * @return NylasEmailFolder[]|ArrayCollection
      */
     protected function getExistingFolders()
@@ -203,7 +232,6 @@ class NylasEmailFolderManager
             ->from(NylasEmailFolder::class, 'ef')
             ->where('ef.origin = :origin')
             ->setParameter('origin', $this->origin);
-
 
         return new ArrayCollection($qb->getQuery()->getResult());
     }

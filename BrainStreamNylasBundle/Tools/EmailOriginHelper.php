@@ -1,5 +1,17 @@
 <?php
 
+/**
+ * Nylas Email Origin Helper.
+ *
+ * This file is part of the BrainStream Nylas Bundle.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Tools
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
+
 namespace BrainStream\Bundle\NylasBundle\Tools;
 
 use BrainStream\Bundle\NylasBundle\Entity\NylasEmailOrigin;
@@ -10,30 +22,30 @@ use Oro\Bundle\EmailBundle\Tools\EmailAddressHelper;
 use Oro\Bundle\EntityBundle\ORM\DoctrineHelper;
 use Oro\Bundle\ImapBundle\Entity\UserEmailOrigin;
 use Oro\Bundle\OrganizationBundle\Entity\OrganizationInterface;
-//use Oro\Bundle\SecurityBundle\SecurityFacade;
-//use Oro\Component\DependencyInjection\ServiceLink;
 use Oro\Bundle\EmailBundle\Tools\EmailOriginHelper as ParentEmailOriginHelper;
 use Oro\Bundle\UserBundle\Entity\User;
 use Oro\Bundle\SecurityBundle\Authentication\TokenAccessorInterface;
 
+/**
+ * Nylas Email Origin Helper.
+ *
+ * Helper for managing Nylas email origins.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Tools
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
 class EmailOriginHelper extends ParentEmailOriginHelper
 {
-    protected $tokenAccessor;
-
-    /** @var  EmailOwnerProvider */
-    protected $emailOwnerProvider;
-
-    /** @var EmailAddressHelper */
-    protected $emailAddressHelper;
-
-    /** @var array */
-    protected $origins = [];
-
     /**
-     * @param DoctrineHelper     $doctrineHelper
-     * @param TokenAccessorInterface  $tokenAccessor
-     * @param EmailOwnerProvider $emailOwnerProvider
-     * @param EmailAddressHelper $emailAddressHelper
+     * Constructor for EmailOriginHelper.
+     *
+     * @param DoctrineHelper         $doctrineHelper     The doctrine helper
+     * @param TokenAccessorInterface $tokenAccessor      The token accessor
+     * @param EmailOwnerProvider     $emailOwnerProvider The email owner provider
+     * @param EmailAddressHelper     $emailAddressHelper The email address helper
      */
     public function __construct(
         DoctrineHelper $doctrineHelper,
@@ -42,8 +54,8 @@ class EmailOriginHelper extends ParentEmailOriginHelper
         EmailAddressHelper $emailAddressHelper
     ) {
         parent::__construct($doctrineHelper, $tokenAccessor, $emailOwnerProvider, $emailAddressHelper);
-        $this->doctrineHelper     = $doctrineHelper;
-        $this->tokenAccessor     = $tokenAccessor;
+        $this->doctrineHelper = $doctrineHelper;
+        $this->tokenAccessor = $tokenAccessor;
         $this->emailOwnerProvider = $emailOwnerProvider;
         $this->emailAddressHelper = $emailAddressHelper;
     }
@@ -51,27 +63,32 @@ class EmailOriginHelper extends ParentEmailOriginHelper
     /**
      * Find existing email origin entity by email string or create and persist new one.
      *
-     * @param string                $email
-     * @param User                  $emailOwner
-     * @param OrganizationInterface $organization
-     * @param string                $originName
-     * @param boolean               $enableUseUserEmailOrigin
+     * @param string                $email                    The email address
+     * @param User                  $emailOwner               The email owner
+     * @param OrganizationInterface $organization             The organization
+     * @param string                $originName               The origin name
+     * @param bool                  $enableUseUserEmailOrigin Whether to enable user email origin
      *
      * @return EmailOrigin
      */
     public function getEmailOrigin1(
-        $email,
+        string $email,
         User $emailOwner,
         OrganizationInterface $organization = null,
-        $originName = InternalEmailOrigin::BAP,
-        $enableUseUserEmailOrigin = true
-    ) {
+        string $originName = InternalEmailOrigin::BAP,
+        bool $enableUseUserEmailOrigin = true
+    ): EmailOrigin {
         $originKey = $originName . $email;
         if (!array_key_exists($originKey, $this->origins)) {
             $pureEmailAddress = $this->emailAddressHelper->extractPureEmailAddress($email);
 
-            $origin = $this
-                ->findCustomEmailOrigin($emailOwner, $pureEmailAddress, $organization, $originName, $enableUseUserEmailOrigin);
+            $origin = $this->findCustomEmailOrigin(
+                $emailOwner,
+                $pureEmailAddress,
+                $organization,
+                $originName,
+                $enableUseUserEmailOrigin
+            );
 
             $this->origins[$originKey] = $origin;
         }
@@ -79,16 +96,23 @@ class EmailOriginHelper extends ParentEmailOriginHelper
     }
 
     /**
-     * @param mixed                 $emailOwner
-     * @param string                $pureEmailAddress
-     * @param OrganizationInterface $organization
-     * @param string                $originName
-     * @param bool                  $enableUseUserEmailOrigin
+     * Find custom email origin.
+     *
+     * @param mixed                 $emailOwner               The email owner
+     * @param string                $pureEmailAddress         The pure email address
+     * @param OrganizationInterface $organization             The organization
+     * @param string                $originName               The origin name
+     * @param bool                  $enableUseUserEmailOrigin Whether to enable user email origin
      *
      * @return mixed|null|object|InternalEmailOrigin|UserEmailOrigin
      */
-    public function findCustomEmailOrigin($emailOwner, $pureEmailAddress, $organization, $originName, $enableUseUserEmailOrigin)
-    {
+    public function findCustomEmailOrigin(
+        $emailOwner,
+        string $pureEmailAddress,
+        OrganizationInterface $organization,
+        string $originName,
+        bool $enableUseUserEmailOrigin
+    ) {
         $originQ = $this->getEntityManager()
             ->getRepository(NylasEmailOrigin::class)
             ->createQueryBuilder('origin')

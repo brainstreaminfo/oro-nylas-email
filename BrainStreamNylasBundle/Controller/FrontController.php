@@ -1,5 +1,17 @@
 <?php
 
+/**
+ * Front Controller for Nylas integration.
+ *
+ * This file is part of the BrainStream Nylas Bundle.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Controller
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
+
 namespace BrainStream\Bundle\NylasBundle\Controller;
 
 use BrainStream\Bundle\NylasBundle\Service\ConfigService;
@@ -16,21 +28,50 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 
+/**
+ * Front Controller for Nylas integration.
+ *
+ * Handles Nylas authentication, folder management, and account operations.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Controller
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
 class FrontController extends AbstractController
 {
     private ConfigService $configService;
+
     private RequestStack $requestStack;
+
     private LoggerInterface $logger;
+
     private string $nylasClientId;
+
     private string $nylasClientSecret;
-    private $user;
-    private $userId;
+
+    private mixed $user;
+
+    private ?int $userId = null;
+
     private NylasApiService $nylasApiService;
-    private $baseUrl;
-    private $client;
+
+    private string $baseUrl;
+
+    private mixed $client;
 
     private EntityManagerInterface $entityManager;
 
+    /**
+     * Constructor for FrontController.
+     *
+     * @param RequestStack           $requestStack    The request stack
+     * @param ConfigService          $configService   The config service
+     * @param LoggerInterface        $logger          The logger
+     * @param NylasApiService        $nylasApiService The Nylas API service
+     * @param EntityManagerInterface $entityManager   The entity manager
+     */
     public function __construct(
         RequestStack $requestStack,
         ConfigService $configService,
@@ -46,18 +87,21 @@ class FrontController extends AbstractController
         $this->baseUrl = $this->requestStack->getCurrentRequest()->getSchemeAndHttpHost();
         //$this->baseUrl = 'http://127.0.0.1:8000';
         $this->nylasApiService = $nylasApiService;
-        $this->client = HttpClient::create([
-            'timeout' => 60,
-            'max_duration' => 60,
-            'verify_peer' => false,
-            'verify_host' => false,
-            //'http_version' => '1.1'
-        ]); //'timeout' => 10,'http_version' => '1.1'
+        $this->client = HttpClient::create(
+            [
+                'timeout' => 60,
+                'max_duration' => 60,
+                'verify_peer' => false,
+                'verify_host' => false,
+                //'http_version' => '1.1'
+            ]
+        ); //'timeout' => 10,'http_version' => '1.1'
         $this->entityManager = $entityManager;
     }
 
     /**
-     * Nylas authentication
+     * Nylas authentication.
+     *
      * @return Response
      */
     #[Route('/nylas/auth', name: 'nylas_auth')]
@@ -65,23 +109,28 @@ class FrontController extends AbstractController
     {
         $redirectUri = $this->baseUrl . $this->generateUrl('nylas_auth_callback');
         //call nylas auth url
-        $authUrl = "https://api.us.nylas.com/v3/connect/auth?" . http_build_query([
+        $authUrl = $this->configService->getApiUrl() . "/v3/connect/auth?" . http_build_query(
+            [
                 'client_id' => $this->nylasClientId,
                 'redirect_uri' => $redirectUri,
                 'response_type' => 'code',
                 'access_type' => 'online',
                 //'provider' => 'google',//microsoft
-            ]);
-
+            ]
+        );
+        //ref:adbrain authurl
         //echo $authUrl;exit;
 
         return $this->redirect($authUrl);
     }
 
     /**
-     * Nylas authentication callback
-     * @param Request $request
+     * Nylas authentication callback.
+     *
+     * @param Request $request The request
+     *
      * @return Response
+     *
      * @throws \Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface
      * @throws \Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface
      * @throws \Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface
@@ -94,7 +143,6 @@ class FrontController extends AbstractController
         $this->userId = $this->getUser()->getId();
         $code = $request->query->get('code');
         if (!$code) {
-            //throw $this->createAccessDeniedException('No authorization code returned from Nylas');
             $this->addFlash('error', 'No authorization code returned from Nylas');
             return $this->redirectToRoute('nylas_email_folder_list');
         }
@@ -102,57 +150,68 @@ class FrontController extends AbstractController
 
         try {
             // get nylas token
-            $response = $this->client->request('POST', 'https://api.us.nylas.com/v3/connect/token', [
-                'headers' => ['Content-Type' => 'application/json'],
-                'json' => [
-                    'client_id' => $this->nylasClientId,
-                    'client_secret' => $this->nylasClientSecret,
-                    'grant_type' => 'authorization_code',
-                    'code' => $code,
-                    'redirect_uri' => $redirectUri,
-                ],
-            ]);
+            $response = $this->client->request(
+                'POST',
+                $this->configService->getApiUrl() . '/v3/connect/token',
+                [
+                    'headers' => ['Content-Type' => 'application/json'],
+                    'json' => [
+                        'client_id' => $this->nylasClientId,
+                        'client_secret' => $this->nylasClientSecret,
+                        'grant_type' => 'authorization_code',
+                        'code' => $code,
+                        'redirect_uri' => $redirectUri,
+                    ],
+                ]
+            );
             $tokenData = $response->toArray();
             // Save nylas token and create/update email origin
             $emailOrigin = $this->nylasApiService->saveNylasToken($this->userId, $tokenData);
 
             $this->entityManager->flush();
-            //ref:adbrain
+            //ref:adbrain removed clear as its causing issues
             //$this->entityManager->clear();
 
             $this->addFlash('success', 'Account connected successfully');
-            return $this->redirectToRoute('nylas_email_folder_list', ['id' => $emailOrigin->getId(), '_t' => time(),'new_account' => 1],
-                Response::HTTP_SEE_OTHER);
-            exit;
+            return $this->redirectToRoute(
+                'nylas_email_folder_list',
+                [
+                    'id' => $emailOrigin->getId(),
+                    '_t' => time(),
+                    'new_account' => 1
+                ],
+                Response::HTTP_SEE_OTHER
+            );
         } catch (\Exception $e) {
             $this->logger->error('Failed to exchange token', ['message' => $e->getMessage()]);
             $this->addFlash('error', 'Authentication failed: ' . $e->getMessage());
             return $this->redirectToRoute('nylas_email_folder_list');
-            //throw new \RuntimeException('Authentication failed: ' . $e->getMessage());
         }
     }
 
-
     /**
-     * Get folder list action, also saves folder list
-     * @param Request $request
+     * Get folder list action, also saves folder list.
+     *
+     * @param Request  $request The request
+     * @param int|null $id      The origin ID
+     *
      * @return Response
+     *
      * @throws \Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface
      * @throws \Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface
      * @throws \Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface
      * @throws \Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface
      * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
      */
-
     #[Route(path: "/nylas/folderList/{id}", name: "nylas_email_folder_list", defaults: ["id" => null])]
-    public function folderListAction(Request $request, $id): Response
+    public function folderListAction(Request $request, ?int $id = null): Response
     {
         $this->userId = $this->getUser()->getId();
         $folders = [];
         $emailOrigin = [];
 
         try {
-            //ref:adbrain
+            //ref:adbrain removed clear as its causing issues
             //$this->entityManager->clear();
             // Fetch all email origins for the user
             $response = $this->nylasApiService->getAccountInfo($this->userId);
@@ -160,12 +219,11 @@ class FrontController extends AbstractController
 
             // If an ID is provided, use it and check for active status; otherwise, find the default origin
             if ($id) {
-                foreach ($emailOrigins as $origin ) {
+                foreach ($emailOrigins as $origin) {
                     if ($origin['id'] == $id && $origin['activeStatus'] == true) {
                         $emailOrigin = $origin;
                         break;
-                    }
-                    elseif($origin['activeStatus'] == true){
+                    } elseif ($origin['activeStatus'] == true) {
                         $emailOrigin = $origin;
                     }
                 }
@@ -175,16 +233,9 @@ class FrontController extends AbstractController
             if ((!$id) && (!$emailOrigin)) {
                 foreach ($emailOrigins as $origin) {
                     if ($origin['isDefault'] == true) {
-                        /*$this->logger->info('=================Default origin loaded==========>', [
-                            'origin' => $origin,
-                            ]);*/
                         $emailOrigin = $origin;
                         break;
-                    }
-                    elseif (!$emailOrigin && $origin['activeStatus'] == true && $origin['isDefault'] == false) {
-                        /*$this->logger->info('=================Default origin loaded==========>', [
-                            'origin' => $origin,
-                            ]);*/
+                    } elseif (!$emailOrigin && $origin['activeStatus'] == true && $origin['isDefault'] == false) {
                         $emailOrigin = $origin;
                     }
                 }
@@ -192,20 +243,26 @@ class FrontController extends AbstractController
 
             // If no origin is found, render an empty page
             if (!$emailOrigin) {
-                return $this->render('@BrainStreamNylas/templates/folderList.html.twig', [
-                    'emailFolders' => [],
-                    'email' => '',
-                    'isMultipleEmail' => $response['isMultipleEmail'] ?? false,
-                    'emailOrigins' => $emailOrigins,
-                    'selectedEmailOriginId' => null,
-                ]);
+                return $this->render(
+                    '@BrainStreamNylas/templates/folderList.html.twig',
+                    [
+                        'emailFolders' => [],
+                        'email' => '',
+                        'isMultipleEmail' => $response['isMultipleEmail'] ?? false,
+                        'emailOrigins' => $emailOrigins,
+                        'selectedEmailOriginId' => null,
+                    ]
+                );
             }
             // Fetch and create folders for the selected email origin
             if (!empty($emailOrigin['accountId'])) {
                 $folders = $this->getFolderList($emailOrigin);
-                $this->logger->info('=================Folders loaded for origin id = ' . $emailOrigin['id'] . '==========>', [
-                    'folders' => $folders,
-                    ]);
+                $this->logger->info(
+                    '=================Folders loaded for origin id = ' . $emailOrigin['id'] . '==========>',
+                    [
+                        'folders' => $folders,
+                    ]
+                );
             } else {
                 $this->addFlash('error', 'Invalid email origin: accountId is missing.');
             }
@@ -213,46 +270,61 @@ class FrontController extends AbstractController
             // Save folder preferences if the form is submitted
             if ($request->isMethod('POST')) {
                 $postData = $request->request->all();
-                //dump($postData);
                 $selectedFolders = $postData['folders'] ?? [];
-                $this->logger->info('Selected folders from form', [
-                    'selected_folders' => $selectedFolders,
-                    'origin_id' => $emailOrigin['id'],
-                    'timestamp' => '2025-06-04 19:07:00 IST'
-                ]);
+                $this->logger->info(
+                    'Selected folders from form',
+                    [
+                        'selected_folders' => $selectedFolders,
+                        'origin_id' => $emailOrigin['id'],
+                        'timestamp' => '2025-06-04 19:07:00 IST'
+                    ]
+                );
 
                 $this->saveFolderList($selectedFolders, $emailOrigin['id']);
                 $this->addFlash('success', 'Folder sync preferences updated successfully.');
-                //return $this->redirectToRoute('nylas_email_folder_list', ['id' => $emailOrigin['id']],response::HTTP_SEE_OTHER);
-                return $this->redirectToRoute('nylas_email_folder_list', [
-                    'id' => $emailOrigin['id'],
-                    '_t' => time() // Add current timestamp
-                ], Response::HTTP_SEE_OTHER);
+                return $this->redirectToRoute(
+                    'nylas_email_folder_list',
+                    [
+                        'id' => $emailOrigin['id'],
+                        '_t' => time() // Add current timestamp
+                    ],
+                    Response::HTTP_SEE_OTHER
+                );
             }
 
-            return $this->render('@BrainStreamNylas/templates/folderList.html.twig', [
-                'emailFolders' => $folders['folders'] ?? [],
-                'email' => $folders['mailboxName'] ?? '',
-                'isMultipleEmail' => $response['isMultipleEmail'] ?? false,
-                'emailOrigins' => $emailOrigins,
-                'selectedEmailOriginId' => $emailOrigin['id'] ?? null,
-            ]);
+            return $this->render(
+                '@BrainStreamNylas/templates/folderList.html.twig',
+                [
+                    'emailFolders' => $folders['folders'] ?? [],
+                    'email' => $folders['mailboxName'] ?? '',
+                    'isMultipleEmail' => $response['isMultipleEmail'] ?? false,
+                    'emailOrigins' => $emailOrigins,
+                    'selectedEmailOriginId' => $emailOrigin['id'] ?? null,
+                ]
+            );
         } catch (\Exception $e) {
             $this->addFlash('error', 'Failed to fetch folder list: ' . $e->getMessage());
-            return $this->render('@BrainStreamNylas/templates/folderList.html.twig', [
-                'emailFolders' => [],
-                'email' => '',
-                'isMultipleEmail' => false,
-                'emailOrigins' => [],
-                'selectedEmailOriginId' => null,
-            ]);
+            return $this->render(
+                '@BrainStreamNylas/templates/folderList.html.twig',
+                [
+                    'emailFolders' => [],
+                    'email' => '',
+                    'isMultipleEmail' => false,
+                    'emailOrigins' => [],
+                    'selectedEmailOriginId' => null,
+                ]
+            );
         }
     }
 
     /**
-     * Save folder list
-     * @param array $selectedFolders
+     * Save folder list.
+     *
+     * @param array $selectedFolders The selected folders
+     * @param int   $originId        The origin ID
+     *
      * @return void
+     *
      * @throws \Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface
      * @throws \Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface
      * @throws \Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface
@@ -268,19 +340,20 @@ class FrontController extends AbstractController
         }
     }
 
-    //
-
     /**
-     * Get folder list
-     * @param $emailOrigin
+     * Get folder list.
+     *
+     * @param array $emailOrigin The email origin
+     *
      * @return array
+     *
      * @throws \Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface
      * @throws \Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface
      * @throws \Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface
      * @throws \Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface
      * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
      */
-    private function getFolderList($emailOrigin): array
+    private function getFolderList(array $emailOrigin): array
     {
         $params = [
             'userId' => $this->getUser()->getId(),
@@ -293,6 +366,14 @@ class FrontController extends AbstractController
         return $folders;
     }
 
+    /**
+     * Set default account action.
+     *
+     * @param Request $request The request
+     * @param int     $id      The origin ID
+     *
+     * @return RedirectResponse
+     */
     #[Route(
         path: "/nylas/setDefaultAccount/{id}",
         name: "nylas_set_default_account",
@@ -314,6 +395,15 @@ class FrontController extends AbstractController
         return $this->redirectToRoute('nylas_email_folder_list', ['id' => $id], Response::HTTP_SEE_OTHER);
     }
 
+    /**
+     * Set account status action.
+     *
+     * @param Request $request The request
+     * @param int     $id      The origin ID
+     * @param string  $status  The status
+     *
+     * @return RedirectResponse
+     */
     #[Route(
         path: "/nylas/setAccountStatus/{id}/{status}",
         name: "nylas_set_account_status",

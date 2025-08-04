@@ -1,66 +1,64 @@
 <?php
 
+/**
+ * Nylas Email Attachment DTO.
+ *
+ * This file is part of the BrainStream Nylas Bundle.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Manager\DTO
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
 
 namespace BrainStream\Bundle\NylasBundle\Manager\DTO;
 
 /**
- * Class EmailAttachment
- * @package BrainStream\Bundle\NylasBundle\Manager\DTO
+ * Nylas Email Attachment DTO.
+ *
+ * Data Transfer Object for Nylas email attachment data.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Manager\DTO
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
  */
 class EmailAttachment
 {
-    /**
-     * @var string
-     */
-    protected $fileName;
+    protected string $fileName = '';
+
+    protected int $fileSize = 0;
+
+    protected string $contentType = '';
+
+    protected string $contentTransferEncoding = '';
+
+    protected string $content = '';
+
+    protected ?string $contentId = null;
+
+    protected ?string $fileContentId = null;
 
     /**
-     * @var int
-     */
-    protected $fileSize;
-
-    /**
-     * @var string
-     */
-    protected $contentType;
-
-    /**
-     * @var string
-     */
-    protected $contentTransferEncoding;
-
-    /**
-     * @var string
-     */
-    protected $content;
-
-    /**
-     * @var string|null
-     */
-    protected $contentId;
-
-    /**
-     * @var string|null
-     */
-    protected $fileContentId;
-
-    /**
-     * Get attachment file name
+     * Get attachment file name.
      *
      * @return string
      */
-    public function getFileName()
+    public function getFileName(): string
     {
         return $this->fileName;
     }
 
     /**
-     * Set attachment file name
+     * Set attachment file name.
      *
-     * @param string $fileName
-     * @return $this
+     * @param string $fileName The file name
+     *
+     * @return self
      */
-    public function setFileName($fileName)
+    public function setFileName(string $fileName): self
     {
         $this->fileName = $fileName;
 
@@ -68,22 +66,23 @@ class EmailAttachment
     }
 
     /**
-     * Get content type. It may be any MIME type
+     * Get content type. It may be any MIME type.
      *
      * @return string
      */
-    public function getContentType()
+    public function getContentType(): string
     {
         return $this->contentType;
     }
 
     /**
-     * Set content type
+     * Set content type.
      *
-     * @param string $contentType any MIME type
-     * @return $this
+     * @param string $contentType Any MIME type
+     *
+     * @return self
      */
-    public function setContentType($contentType)
+    public function setContentType(string $contentType): self
     {
         $this->contentType = $contentType;
 
@@ -91,22 +90,23 @@ class EmailAttachment
     }
 
     /**
-     * Get encoding type of attachment content
+     * Get encoding type of attachment content.
      *
      * @return string
      */
-    public function getContentTransferEncoding()
+    public function getContentTransferEncoding(): string
     {
         return $this->contentTransferEncoding;
     }
 
     /**
-     * Set encoding type of attachment content
+     * Set encoding type of attachment content.
      *
-     * @param string $contentTransferEncoding
-     * @return $this
+     * @param string $contentTransferEncoding The content transfer encoding
+     *
+     * @return self
      */
-    public function setContentTransferEncoding($contentTransferEncoding)
+    public function setContentTransferEncoding(string $contentTransferEncoding): self
     {
         $this->contentTransferEncoding = $contentTransferEncoding;
 
@@ -114,22 +114,23 @@ class EmailAttachment
     }
 
     /**
-     * Get content of email attachment
+     * Get content of email attachment.
      *
      * @return string
      */
-    public function getContent()
+    public function getContent(): string
     {
         return $this->content;
     }
 
     /**
-     * Set content of email attachment
+     * Set content of email attachment.
      *
-     * @param string $content
-     * @return $this
+     * @param string $content The content
+     *
+     * @return self
      */
-    public function setContent($content)
+    public function setContent(string $content): self
     {
         $this->content = $content;
 
@@ -137,54 +138,69 @@ class EmailAttachment
     }
 
     /**
-     * @return null|string
+     * Get content ID.
+     *
+     * @return string|null
      */
-    public function getContentId()
+    public function getContentId(): ?string
     {
         return $this->contentId;
     }
 
     /**
-     * @param null|string $contentId
+     * Set content ID.
+     *
+     * @param string|null $contentId The content ID
+     *
+     * @return self
      */
-    public function setContentId($contentId)
+    public function setContentId(?string $contentId): self
     {
         $this->contentId = $contentId;
+        return $this;
     }
 
     /**
-     * @return null|string
+     * Get file content ID.
+     *
+     * @return string|null
      */
-    public function getFileContentId()
+    public function getFileContentId(): ?string
     {
         return $this->fileContentId;
     }
 
     /**
-     * @param null|string $fileContentId
+     * Set file content ID.
+     *
+     * @param string|null $fileContentId The file content ID
+     *
+     * @return self
      */
-    public function setFileContentId($fileContentId)
+    public function setFileContentId(?string $fileContentId): self
     {
         $this->fileContentId = $fileContentId;
+        return $this;
     }
 
     /**
-     * Get attachment file size in bytes
+     * Get attachment file size in bytes.
      *
      * @return int
      */
-    public function getFileSize()
+    public function getFileSize(): int
     {
         return $this->fileSize;
     }
 
     /**
-     * Set attachment file size in bytes
+     * Set attachment file size in bytes.
      *
-     * @param int $fileSize
-     * @return $this
+     * @param int $fileSize The file size in bytes
+     *
+     * @return self
      */
-    public function setFileSize($fileSize)
+    public function setFileSize(int $fileSize): self
     {
         $this->fileSize = $fileSize;
 

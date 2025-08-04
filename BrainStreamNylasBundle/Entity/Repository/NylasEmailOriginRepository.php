@@ -1,5 +1,17 @@
 <?php
 
+/**
+ * Nylas Email Origin Repository.
+ *
+ * This file is part of the BrainStream Nylas Bundle.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Entity\Repository
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
+
 namespace BrainStream\Bundle\NylasBundle\Entity\Repository;
 
 use Doctrine\ORM\EntityRepository;
@@ -7,7 +19,6 @@ use Oro\Bundle\EmailBundle\Entity\Email;
 use Oro\Bundle\EmailBundle\Entity\EmailAttachmentContent;
 use Oro\Bundle\EmailBundle\Entity\EmailBody;
 use Oro\Bundle\EmailBundle\Event\EmailBodyLoaded;
-//use BrainStream\Bundle\NylasBundle\Entity\EmailAttachment;
 use Oro\Bundle\EmailBundle\Entity\EmailAttachment;
 use BrainStream\Bundle\NylasBundle\Entity\NylasEmailOrigin;
 use Oro\Bundle\UserBundle\Entity\User;
@@ -15,18 +26,21 @@ use BrainStream\Bundle\NylasBundle\Manager\NylasEmailManager;
 use BrainStream\Bundle\NylasBundle\Service\NylasClient;
 
 /**
- * Class NylasEmailOriginRepository
+ * Nylas Email Origin Repository.
+ *
+ * Repository for managing Nylas email origin entities and related operations.
+ *
  * @package BrainStream\Bundle\NylasBundle\Entity\Repository
  */
 class NylasEmailOriginRepository extends EntityRepository
 {
     /**
-     * Fetch client Nylas status
+     * Fetch client Nylas status.
      *
-     * @param $manager_url
-     * @param $clientIdentifier
+     * @param string $manager_url      The manager URL
+     * @param string $clientIdentifier The client identifier
      *
-     * @return bool
+     * @return bool|null The Nylas status or null if not found
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public function getClientNylasStatus($manager_url, $clientIdentifier): ?bool
@@ -38,38 +52,43 @@ class NylasEmailOriginRepository extends EntityRepository
             $clientDetails = json_decode($response->getBody(), true);
             return (bool)$clientDetails['nylasStatus'];
         }
+
+        return null;
     }
 
     /**
-     * @param NylasEmailOrigin $newOrigin
+     * Get inactive origins for a user.
      *
-     * @return array
+     * @param NylasEmailOrigin $newOrigin The new origin
+     *
+     * @return array The inactive origins
      */
     public function getInactiveOrigins(NylasEmailOrigin $newOrigin)
     {
         return $this->createQueryBuilder('old_origin')
-                    ->where('old_origin.isActive = :inactive')
-                    ->andWhere('old_origin.owner = :owner')
-                    ->setParameter('inactive', false)
-                    ->setParameter('owner', $newOrigin->getOwner())
-                    ->getQuery()
-                    ->getResult();
+            ->where('old_origin.isActive = :inactive')
+            ->andWhere('old_origin.owner = :owner')
+            ->setParameter('inactive', false)
+            ->setParameter('owner', $newOrigin->getOwner())
+            ->getQuery()
+            ->getResult();
     }
 
     /**
-     * Check user have old email sync settings or new nylas
+     * Check if user has old email sync settings or new nylas.
      *
-     * @param User $user
+     * @param User      $user      The user
+     * @param int|null  $originId  The origin ID
      *
-     * @return mixed
+     * @return mixed The Nylas origin or null
      * @throws \Doctrine\ORM\NonUniqueResultException
      */
     public function getNylasOrigins(User $user, $originId = null)
     {
         $nylasOriginQuery = $this->createQueryBuilder('origin')
-                                 ->where('origin.accountId IS NOT NULL')
-                                 ->andWhere('origin.owner = :owner')
-                                 ->setParameter('owner', $user);
+            ->where('origin.accountId IS NOT NULL')
+            ->andWhere('origin.owner = :owner')
+            ->setParameter('owner', $user);
 
         if ($originId) {
             $nylasOriginQuery->andWhere('origin.id = :origin')->setParameter('origin', $originId);
@@ -78,11 +97,11 @@ class NylasEmailOriginRepository extends EntityRepository
     }
 
     /**
-     * Fetch origin of the user
+     * Fetch all origins of the user.
      *
-     * @param User $user
+     * @param User $user The user
      *
-     * @return mixed
+     * @return array The user origins data
      * @throws \Doctrine\ORM\NonUniqueResultException
      */
     public function getAllUserOrigins(User $user)
@@ -93,13 +112,13 @@ class NylasEmailOriginRepository extends EntityRepository
             'isMultipleEmail' => false
         ];
         $origins  = $this->createQueryBuilder('origin')
-                         ->select("origin.id, origin.isActive, origin.syncCode, origin.isDefault, origin.user, origin.provider, origin.syncCodeUpdatedAt, origin.createdAt, CONCAT(owner.firstName, ' ', owner.lastName) as username, origin.signature, owner.is_multiple_email as isMultipleEmail")
-                         ->innerJoin('origin.owner', 'owner')
-                         ->where('origin.accountId IS NOT NULL')
-                         ->andWhere('origin.owner = :owner')
-                         ->setParameter('owner', $user)
-                         ->getQuery()
-                         ->getArrayResult();
+            ->select("origin.id, origin.isActive, origin.syncCode, origin.isDefault, origin.user, origin.provider, origin.syncCodeUpdatedAt, origin.createdAt, CONCAT(owner.firstName, ' ', owner.lastName) as username, origin.signature, owner.is_multiple_email as isMultipleEmail")
+            ->innerJoin('origin.owner', 'owner')
+            ->where('origin.accountId IS NOT NULL')
+            ->andWhere('origin.owner = :owner')
+            ->setParameter('owner', $user)
+            ->getQuery()
+            ->getArrayResult();
         if (count($origins) > 0) {
             $totalActive = 0;
             foreach ($origins as $key => $origin) {
@@ -123,51 +142,51 @@ class NylasEmailOriginRepository extends EntityRepository
     }
 
     /**
-     * Fetch array result of user origin
+     * Fetch array result of user origin.
      *
-     * @param User $user
+     * @param User $user The user
      *
      * @return array|int
      */
     private function userOriginQuery(User $user)
     {
         return $this->createQueryBuilder('origin')
-                    ->select("origin.id, origin.isActive, origin.user, origin.provider, origin.syncCodeUpdatedAt, origin.createdAt, CONCAT(owner.firstName, ' ', owner.lastName) as username, origin.signature")
-                    ->innerJoin('origin.owner', 'owner')
-                    ->where('origin.accountId IS NOT NULL')
-                    ->andWhere('origin.owner = :owner')
-                    ->andWhere('origin.isDefault = :default')
-                    ->setParameter('owner', $user)
-                    ->setParameter('default', 0)
-                    ->getQuery()
-                    ->getArrayResult();
+            ->select("origin.id, origin.isActive, origin.user, origin.provider, origin.syncCodeUpdatedAt, origin.createdAt, CONCAT(owner.firstName, ' ', owner.lastName) as username, origin.signature")
+            ->innerJoin('origin.owner', 'owner')
+            ->where('origin.accountId IS NOT NULL')
+            ->andWhere('origin.owner = :owner')
+            ->andWhere('origin.isDefault = :default')
+            ->setParameter('owner', $user)
+            ->setParameter('default', 0)
+            ->getQuery()
+            ->getArrayResult();
     }
 
     /**
-     * Updating remove sync
+     * Updating remove sync.
      *
-     * @param $emailOriginId
+     * @param int $emailOriginId The email origin ID
      *
      * @return array
      */
     public function removeSyncEmailOrigin($emailOriginId)
     {
         return $this->createQueryBuilder('neo')
-                    ->update()
-                    ->set('neo.isActive', 0)
-                    ->where('neo.id = :emailOrigin')
-                    ->setParameter('emailOrigin', $emailOriginId)
-                    ->getQuery()
-                    ->getResult();
+            ->update()
+            ->set('neo.isActive', 0)
+            ->where('neo.id = :emailOrigin')
+            ->setParameter('emailOrigin', $emailOriginId)
+            ->getQuery()
+            ->getResult();
     }
 
     /**
-     * Count origins of the user
+     * Count origins of the user.
      *
-     * @param User $user
-     * @param      $manager_url
-     * @param      $translation
-     * @param      $data
+     * @param User   $user         The user
+     * @param string $manager_url  The manager URL
+     * @param object $translation  The translation object
+     * @param array  $data         The data array
      *
      * @return array
      */
@@ -204,40 +223,41 @@ class NylasEmailOriginRepository extends EntityRepository
     }
 
     /**
-     * Getting multiple email details
+     * Getting multiple email details.
      *
-     * @param $user
+     * @param User $user The user
      *
      * @return array
      */
     public function getMultipleEmailList($user)
     {
         return $this->createQueryBuilder('neo')
-                    ->select('neo.id, neo.mailboxName, neo.isDefault, neo.isActive')
-                    ->where('neo.owner = :user')
-                    ->setParameter('user', $user)
-                    ->getQuery()
-                    ->getResult();
+            ->select('neo.id, neo.mailboxName, neo.isDefault, neo.isActive')
+            ->where('neo.owner = :user')
+            ->setParameter('user', $user)
+            ->getQuery()
+            ->getResult();
     }
 
     /**
-     * Getting all multiple email details
+     * Getting all multiple email details.
+     *
      * @return array
      */
     public function getMultipleEmails()
     {
         return $this->createQueryBuilder('origin')
-                    ->select("origin.id, origin.isActive, origin.user, origin.provider, origin.syncCodeUpdatedAt, origin.createdAt, origin.accountId, origin.syncCode, CONCAT(owner.firstName, ' ', owner.lastName) as username, origin.synchronizedAt, origin.isDefault")
-                    ->innerJoin('origin.owner', 'owner')
-                    ->where('origin.accountId IS NOT NULL')
-                    ->getQuery()
-                    ->getArrayResult();
+            ->select("origin.id, origin.isActive, origin.user, origin.provider, origin.syncCodeUpdatedAt, origin.createdAt, origin.accountId, origin.syncCode, CONCAT(owner.firstName, ' ', owner.lastName) as username, origin.synchronizedAt, origin.isDefault")
+            ->innerJoin('origin.owner', 'owner')
+            ->where('origin.accountId IS NOT NULL')
+            ->getQuery()
+            ->getArrayResult();
     }
 
     /**
-     * Getting total extra emails count
+     * Getting total extra emails count.
      *
-     * @param $user
+     * @param User $user The user
      *
      * @return array|int
      */
@@ -245,15 +265,15 @@ class NylasEmailOriginRepository extends EntityRepository
     {
         // Getting owner ids
         $emailCount = $this->createQueryBuilder('origin')
-                           ->select("SUM(su.number_of_email) as emailCount")
-                           ->innerJoin(User::class, 'su', 'WITH', 'su.id = origin.owner')
-                           ->where('origin.accountId IS NOT NULL')
-                           ->andWhere('origin.owner NOT IN (:owner)')
-                           ->andWhere('origin.isDefault = :default')
-                           ->setParameter('owner', $user)
-                           ->setParameter('default', 0)
-                           ->getQuery()
-                           ->getArrayResult();
+            ->select("SUM(su.number_of_email) as emailCount")
+            ->innerJoin(User::class, 'su', 'WITH', 'su.id = origin.owner')
+            ->where('origin.accountId IS NOT NULL')
+            ->andWhere('origin.owner NOT IN (:owner)')
+            ->andWhere('origin.isDefault = :default')
+            ->setParameter('owner', $user)
+            ->setParameter('default', 0)
+            ->getQuery()
+            ->getArrayResult();
 
         $emailCount = array_column($emailCount, "emailCount");
 
@@ -265,23 +285,27 @@ class NylasEmailOriginRepository extends EntityRepository
     }
 
     /**
-     * Updating isDefault to 0 for owner
+     * Updating isDefault to 0 for owner.
      *
-     * @param $owner
+     * @param User $owner The owner
+     *
+     * @return void
      */
     public function updateIsDefault($owner)
     {
         $this->createQueryBuilder('neo')
-             ->update()
-             ->set('neo.isDefault', 0)
-             ->where('neo.owner = :owner')
-             ->setParameter('owner', $owner)
-             ->getQuery()
-             ->execute();
+            ->update()
+            ->set('neo.isDefault', 0)
+            ->where('neo.owner = :owner')
+            ->setParameter('owner', $owner)
+            ->getQuery()
+            ->execute();
     }
 
     /**
-     * @param User $user
+     * Fetch default origin for user.
+     *
+     * @param User $user The user
      *
      * @return mixed
      * @throws \Doctrine\ORM\NonUniqueResultException
@@ -289,25 +313,25 @@ class NylasEmailOriginRepository extends EntityRepository
     public function fetchDefaultOrigin(User $user)
     {
         return $this->createQueryBuilder('nylas_email_origin')
-                    ->select('nylas_email_origin.mailboxName')
-                    ->where('nylas_email_origin.isDefault = :isDefault')
-                    ->andWhere('nylas_email_origin.isActive = :isActive')
-                    ->andWhere('nylas_email_origin.owner = :owner')
-                    ->setParameter('isDefault', true)
-                    ->setParameter('isActive', true)
-                    ->setParameter('owner', $user)
-                    ->getQuery()
-                    ->getOneOrNullResult();
+            ->select('nylas_email_origin.mailboxName')
+            ->where('nylas_email_origin.isDefault = :isDefault')
+            ->andWhere('nylas_email_origin.isActive = :isActive')
+            ->andWhere('nylas_email_origin.owner = :owner')
+            ->setParameter('isDefault', true)
+            ->setParameter('isActive', true)
+            ->setParameter('owner', $user)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 
     /**
-     * Load email body and attachments
+     * Load email body and attachments.
      *
-     * @param Email $entity
-     * @param User $user
-     * @param NylasClient $nylasClient
-     * @param NylasEmailManager $nylasEmailManager
-     * @param                   $dispatcher
+     * @param Email             $entity            The email entity
+     * @param User              $user              The user
+     * @param NylasClient       $nylasClient       The Nylas client
+     * @param NylasEmailManager $nylasEmailManager The Nylas email manager
+     * @param object            $dispatcher        The dispatcher
      *
      * @return bool
      *
@@ -330,7 +354,7 @@ class NylasEmailOriginRepository extends EntityRepository
                 $message = $nylasClient->getMessage($entity);
                 $uid = '';
                 $xThreadId = '';
-                if (count($message['data']) == 1){
+                if (count($message['data']) == 1) {
                     $uid = $message['data'][0]['id'];
                     $xThreadId = $message['data'][0]['thread_id'];
                 } else {
@@ -363,7 +387,7 @@ class NylasEmailOriginRepository extends EntityRepository
                     $emailBody->setBodyIsText($message->getBody()->getBodyIsText());
                     $emailBody->setEmail($entity);
 
-                    if(count($message->getAttachments()) > 0) {
+                    if (count($message->getAttachments()) > 0) {
                         foreach ($message->getAttachments() as $attachment) {
                             $emailAttachment        = new EmailAttachment();
                             $emailAttachmentContent = new EmailAttachmentContent();
@@ -401,13 +425,11 @@ class NylasEmailOriginRepository extends EntityRepository
             //$dispatcher->dispatch(EmailBodyLoaded::NAME, new EmailBodyLoaded($entity));
             //ref:adbrain
             $dispatcher->dispatch(new EmailBodyLoaded($entity), EmailBodyLoaded::NAME);
-
         } elseif ($entity->getEmailBody() != null) {
             //$dispatcher->dispatch(EmailBodyLoaded::NAME, new EmailBodyLoaded($entity));
             //ref:adbrain
             $dispatcher->dispatch(new EmailBodyLoaded($entity), EmailBodyLoaded::NAME);
-            }
-         else {
+        } else {
             return false;
         }
         return true;
@@ -416,28 +438,35 @@ class NylasEmailOriginRepository extends EntityRepository
     /**
      * Add a nylas exception to manager's table.
      *
-     * @param $manager_url
-     * @param $data
+     * @param string $manager_url The manager URL
+     * @param array  $data        The data array
      *
      * @return bool|\Exception
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public function postNylasException($manager_url, $data)
     {
-        try{
+        try {
             $client  = new \GuzzleHttp\Client(['base_uri' => $manager_url, 'verify' => false]);
             $response = $client->request('POST', '/client/exception', ['form_params' => $data]);
             $response = json_decode($response->getBody()->getContents(), true);
-            if($response){
+            if ($response) {
                 return true;
             }
-        }catch (\Exception $e){
+        } catch (\Exception $e) {
             return $e;
         }
     }
 
-    public function getEmailOriginMailboxCount($emailOriginIds) {
-
+    /**
+     * Get email origin mailbox count.
+     *
+     * @param array $emailOriginIds The email origin IDs
+     *
+     * @return int
+     */
+    public function getEmailOriginMailboxCount($emailOriginIds)
+    {
         $resultCount = 0;
         $first = $this->createQueryBuilder('origin')
             ->where('origin.id = :id')
@@ -445,11 +474,11 @@ class NylasEmailOriginRepository extends EntityRepository
             ->getQuery()->getArrayResult();
 
         $second = $this->createQueryBuilder('origin')
-                       ->where('origin.mailboxName = :mailboxName')
-                       ->setParameter('mailboxName', $first[0]['mailboxName'])
-                       ->getQuery()->getArrayResult();
+            ->where('origin.mailboxName = :mailboxName')
+            ->setParameter('mailboxName', $first[0]['mailboxName'])
+            ->getQuery()->getArrayResult();
 
-        if (count($second) > 1 ) {
+        if (count($second) > 1) {
             $resultCount = count($second);
         }
 
@@ -457,9 +486,9 @@ class NylasEmailOriginRepository extends EntityRepository
     }
 
     /**
-     * Updating remove sync
+     * Updating remove sync.
      *
-     * @param $emailOriginId
+     * @param string $email The email address
      *
      * @return array
      */
@@ -476,7 +505,15 @@ class NylasEmailOriginRepository extends EntityRepository
             ->getResult();
     }
 
-    public function getVerifiedMassEmail($user) {
+    /**
+     * Get verified mass email for user.
+     *
+     * @param User $user The user
+     *
+     * @return array
+     */
+    public function getVerifiedMassEmail($user)
+    {
         return $this->createQueryBuilder('neo')
             ->select('neo.id', 'neo.mailboxName', 'neo.signature')
             ->where('neo.owner = :owner')
@@ -490,9 +527,15 @@ class NylasEmailOriginRepository extends EntityRepository
             ->getArrayResult();
     }
 
-    public function getVerifiedEmailsOfAllUsers() {
+    /**
+     * Get verified emails of all users.
+     *
+     * @return array
+     */
+    public function getVerifiedEmailsOfAllUsers()
+    {
         return $this->createQueryBuilder('neo')
-            ->select( 'neo.mailboxName')
+            ->select('neo.mailboxName')
             ->andWhere('neo.verifyMassEmail = :verifyMassEmail')
             ->andWhere('neo.isActive = :isActive')
             ->setParameter('verifyMassEmail', 1)

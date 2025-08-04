@@ -1,5 +1,4 @@
 // Nylas Bundle - Simple JavaScript (Standalone Version)
-// This script works without RequireJS and can be loaded directly
 
 (function(window) {
     'use strict';
@@ -14,7 +13,7 @@
          * Initialize the script
          */
         init: function () {
-            console.log('Nylas Bundle: JavaScript loaded successfully!');
+            // console.log('Nylas Bundle: JavaScript loaded successfully!');
 
             // Wait for jQuery to be available
             this.waitForJQuery();
@@ -28,8 +27,8 @@
             if (typeof $ !== 'undefined' || typeof jQuery !== 'undefined') {
                 var $ = window.$ || window.jQuery;
 
-                console.log('Nylas Bundle: jQuery available:', typeof $ !== 'undefined');
-                console.log('Nylas Bundle: jQuery version:', $.fn.jquery);
+                // console.log('Nylas Bundle: jQuery available:', typeof $ !== 'undefined');
+                // console.log('Nylas Bundle: jQuery version:', $.fn.jquery);
 
                 // Initialize all components
                 self.initFolderListHandlers();
@@ -66,7 +65,7 @@
                 if (urlParams.get('new_account') === '1') {
                     $('input[id^="folder-"]').each(function() {
                         $(this).prop('checked', false);
-                        console.log('Unchecked checkbox for folder ID: ', $(this).val());
+                        // console.log('Unchecked checkbox for folder ID: ', $(this).val());
                     });
                 }
             });
@@ -225,7 +224,7 @@
             var $ = window.$ || window.jQuery;
 
             $(document).ready(function() {
-                console.log('Nylas Bundle: DOM ready');
+                // console.log('Nylas Bundle: DOM ready');
 
                 // Add a class to body to indicate script is loaded
                 $('body').addClass('nylas-simple-loaded');
@@ -239,6 +238,6 @@
     // Auto-initialize when the script is loaded
     NylasSimple.init();
 
-    console.log('Nylas Bundle: Simple script loaded and initialized');
+    // console.log('Nylas Bundle: Simple script loaded and initialized');
 
 })(window);

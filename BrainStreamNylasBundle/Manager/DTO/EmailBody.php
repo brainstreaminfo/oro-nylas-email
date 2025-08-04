@@ -1,27 +1,42 @@
 <?php
 
+/**
+ * Nylas Email Body DTO.
+ *
+ * This file is part of the BrainStream Nylas Bundle.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Manager\DTO
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
 
 namespace BrainStream\Bundle\NylasBundle\Manager\DTO;
 
-
+/**
+ * Nylas Email Body DTO.
+ *
+ * Data Transfer Object for Nylas email body data.
+ *
+ * @category BrainStream
+ * @package  BrainStream\Bundle\NylasBundle\Manager\DTO
+ * @author   BrainStream Team
+ * @license  MIT https://opensource.org/licenses/MIT
+ * @link     https://github.com/brainstreaminfo/oro-nylas-email
+ */
 class EmailBody
 {
-    /**
-     * @var string
-     */
-    protected $content;
+    protected string $content = '';
 
-    /**
-     * @var bool
-     */
-    protected $bodyIsText;
+    protected bool $bodyIsText = false;
 
     /**
      * Get body content.
      *
      * @return string
      */
-    public function getContent()
+    public function getContent(): string
     {
         return $this->content;
     }
@@ -29,10 +44,11 @@ class EmailBody
     /**
      * Set body content.
      *
-     * @param string $content
-     * @return $this
+     * @param string $content The content
+     *
+     * @return self
      */
-    public function setContent($content)
+    public function setContent(string $content): self
     {
         $this->content = $content;
 
@@ -42,9 +58,9 @@ class EmailBody
     /**
      * Indicate whether email body is a text or html.
      *
-     * @return bool true if body is text/plain; otherwise, the body content is text/html
+     * @return bool True if body is text/plain; otherwise, the body content is text/html
      */
-    public function getBodyIsText()
+    public function getBodyIsText(): bool
     {
         return $this->bodyIsText;
     }
@@ -52,10 +68,11 @@ class EmailBody
     /**
      * Set body content type.
      *
-     * @param bool $bodyIsText true for text/plain, false for text/html
-     * @return $this
+     * @param bool $bodyIsText True for text/plain, false for text/html
+     *
+     * @return self
      */
-    public function setBodyIsText($bodyIsText)
+    public function setBodyIsText(bool $bodyIsText): self
     {
         $this->bodyIsText = $bodyIsText;
 
