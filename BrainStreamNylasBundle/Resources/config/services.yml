@@ -101,7 +101,13 @@ services:
   Oro\Bundle\EmailBundle\Tools\EmailOriginHelper:
     alias: oro_email.tools.email_origin_helper
 
-  BrainStream\Bundle\NylasBundle\Form\Type\NylasEmailOriginFromType:
+  BrainStream\Bundle\NylasBundle\Form\Type\EmailOriginFromType:
+    arguments:
+      - "@oro_security.token_accessor"
+      - "@oro_email.email.model.builder.helper"
+      - "@oro_email.mailbox.manager"
+      - "@doctrine"
+      - "@oro_email.tools.email_origin_helper"
     tags:
       - { name: form.type, alias: oro_email_email_origin_from }
 

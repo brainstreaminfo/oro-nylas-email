@@ -185,7 +185,12 @@ class EmailController extends BaseEmailController
         $emailModel = $this->container->get('Oro\Bundle\EmailBundle\Builder\EmailModelBuilder')->createEmailModel();
         $emailModel->setParentEmailId($email->getId());
         $emailModel->setSubject($this->translator->trans('oro.email.reply_subject', ['%subject%' => $email->getSubject()]));
-        $emailModel->setTo($email->getFrom()->getEmail());
+
+        // Get the sender's email address
+        $fromEmailAddress = $email->getFromEmailAddress();
+        if ($fromEmailAddress) {
+            $emailModel->setTo($fromEmailAddress->getEmail());
+        }
 
         // Check for Nylas origin
         $user = $this->security->getUser();
@@ -217,18 +222,28 @@ class EmailController extends BaseEmailController
         $emailModel->setSubject($this->translator->trans('oro.email.reply_subject', ['%subject%' => $email->getSubject()]));
 
         // Set recipients for reply all
-        $to = [$email->getFrom()->getEmail()];
+        $to = [];
         $cc = [];
 
-        foreach ($email->getTo() as $recipient) {
-            if ($recipient->getEmail() !== $this->security->getUser()->getEmail()) {
-                $to[] = $recipient->getEmail();
+        // Add sender to "to" list
+        $fromEmailAddress = $email->getFromEmailAddress();
+        if ($fromEmailAddress) {
+            $to[] = $fromEmailAddress->getEmail();
+        }
+
+        // Add "to" recipients
+        foreach ($email->getRecipients('to') as $recipient) {
+            $recipientEmail = $recipient->getEmailAddress()->getEmail();
+            if ($recipientEmail !== $this->security->getUser()->getEmail()) {
+                $to[] = $recipientEmail;
             }
         }
 
-        foreach ($email->getCc() as $recipient) {
-            if ($recipient->getEmail() !== $this->security->getUser()->getEmail()) {
-                $cc[] = $recipient->getEmail();
+        // Add "cc" recipients
+        foreach ($email->getRecipients('cc') as $recipient) {
+            $recipientEmail = $recipient->getEmailAddress()->getEmail();
+            if ($recipientEmail !== $this->security->getUser()->getEmail()) {
+                $cc[] = $recipientEmail;
             }
         }
 
@@ -284,12 +299,24 @@ class EmailController extends BaseEmailController
     protected function prepareForwardBody(Email $email): string
     {
         $body = "\n\n" . str_repeat('-', 50) . "\n";
-        $body .= $this->translator->trans('oro.email.forward_header') . "\n";
-        $body .= $this->translator->trans('oro.email.from') . ': ' . $email->getFrom()->getEmail() . "\n";
-        $body .= $this->translator->trans('oro.email.date') . ': ' . $email->getSentAt()->format('Y-m-d H:i:s') . "\n";
-        $body .= $this->translator->trans('oro.email.subject') . ': ' . $email->getSubject() . "\n";
+        $body .= "Forwarded Message\n";
+
+        // Get sender information
+        $fromEmailAddress = $email->getFromEmailAddress();
+        $fromEmail = $fromEmailAddress ? $fromEmailAddress->getEmail() : 'Unknown';
+        $fromName = $email->getFromName() ?: $fromEmail;
+
+        $body .= "From: " . $fromName . " <" . $fromEmail . ">\n";
+        $body .= "Date: " . $email->getSentAt()->format('Y-m-d H:i:s') . "\n";
+        $body .= "Subject: " . $email->getSubject() . "\n";
         $body .= str_repeat('-', 50) . "\n\n";
-        $body .= $email->getEmailBody()->getBodyContent();
+
+        $emailBody = $email->getEmailBody();
+        if ($emailBody) {
+            $body .= $emailBody->getBodyContent();
+        } else {
+            $body .= "Email body not available";
+        }
 
         return $body;
     }

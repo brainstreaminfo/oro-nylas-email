@@ -356,17 +356,10 @@ class NylasEmailProcessor extends EmailModelSender
         // Fix: 'reply_to' should be an array of objects, not a single object
         $message['reply_to'] = $message['from']; // Use the same as 'from' unless specified otherwise
 
-        $message['to'] = array_map(function ($email) {
-            return ['email' => $email];
-        }, $model->getTo());
-
-        $message['cc'] = array_map(function ($email) {
-            return ['email' => $email];
-        }, $model->getCc() ?? []);
-
-        $message['bcc'] = array_map(function ($email) {
-            return ['email' => $email];
-        }, $model->getBcc() ?? []);
+        // Use getAddresses method to properly extract email addresses
+        $message['to'] = $this->getAddresses($model->getTo());
+        $message['cc'] = $this->getAddresses($model->getCc() ?? []);
+        $message['bcc'] = $this->getAddresses($model->getBcc() ?? []);
 
         $message['body'] = mb_convert_encoding($model->getBody(), 'UTF-8', 'auto');
         $message['subject'] = mb_convert_encoding($model->getSubject(), 'UTF-8', 'auto');
