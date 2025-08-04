@@ -32,6 +32,7 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 use Oro\Bundle\EmailBundle\Controller\EmailController as BaseEmailController;
 use Oro\Bundle\EmailBundle\Form\Model\Email as EmailModel;
 use Oro\Bundle\EmailBundle\Builder\EmailModelBuilder;
+use Psr\Log\LoggerInterface;
 
 #[Route('/email')]
 /**
@@ -53,6 +54,7 @@ class EmailController extends BaseEmailController
     private EntityManagerInterface $doctrine;
     private NylasEmailManager $nylasEmailManager;
     private TranslatorInterface $translator;
+    private LoggerInterface $logger;
 
     /**
      * Constructor for EmailController.
@@ -62,19 +64,22 @@ class EmailController extends BaseEmailController
      * @param ManagerRegistry       $managerRegistry    The doctrine manager registry
      * @param NylasEmailManager     $nylasEmailManager  The Nylas email manager
      * @param TranslatorInterface   $translator         The translator service
+     * @param LoggerInterface       $logger             The logger service
      */
     public function __construct(
         Security $security,
         NylasClient $nylasClient,
         ManagerRegistry $managerRegistry,
         NylasEmailManager $nylasEmailManager,
-        TranslatorInterface $translator
+        TranslatorInterface $translator,
+        LoggerInterface $logger
     ) {
         $this->security = $security;
         $this->nylasClient = $nylasClient;
         $this->doctrine = $managerRegistry->getManager();
         $this->nylasEmailManager = $nylasEmailManager;
         $this->translator = $translator;
+        $this->logger = $logger;
     }
 
     /**
@@ -182,15 +187,9 @@ class EmailController extends BaseEmailController
     #[AclAncestor('oro_email_email_create')]
     public function replyAction(Email $email)
     {
-        $emailModel = $this->container->get('Oro\Bundle\EmailBundle\Builder\EmailModelBuilder')->createEmailModel();
-        $emailModel->setParentEmailId($email->getId());
-        $emailModel->setSubject($this->translator->trans('oro.email.reply_subject', ['%subject%' => $email->getSubject()]));
-
-        // Get the sender's email address
-        $fromEmailAddress = $email->getFromEmailAddress();
-        if ($fromEmailAddress) {
-            $emailModel->setTo($fromEmailAddress->getEmail());
-        }
+        // Use OroCRM's base EmailModelBuilder to create the reply model
+        $emailModelBuilder = $this->container->get('Oro\Bundle\EmailBundle\Builder\EmailModelBuilder');
+        $emailModel = $emailModelBuilder->createReplyEmailModel($email);
 
         // Check for Nylas origin
         $user = $this->security->getUser();
@@ -217,38 +216,9 @@ class EmailController extends BaseEmailController
     #[AclAncestor('oro_email_email_create')]
     public function replyAllAction(Email $email)
     {
-        $emailModel = $this->container->get('Oro\Bundle\EmailBundle\Builder\EmailModelBuilder')->createEmailModel();
-        $emailModel->setParentEmailId($email->getId());
-        $emailModel->setSubject($this->translator->trans('oro.email.reply_subject', ['%subject%' => $email->getSubject()]));
-
-        // Set recipients for reply all
-        $to = [];
-        $cc = [];
-
-        // Add sender to "to" list
-        $fromEmailAddress = $email->getFromEmailAddress();
-        if ($fromEmailAddress) {
-            $to[] = $fromEmailAddress->getEmail();
-        }
-
-        // Add "to" recipients
-        foreach ($email->getRecipients('to') as $recipient) {
-            $recipientEmail = $recipient->getEmailAddress()->getEmail();
-            if ($recipientEmail !== $this->security->getUser()->getEmail()) {
-                $to[] = $recipientEmail;
-            }
-        }
-
-        // Add "cc" recipients
-        foreach ($email->getRecipients('cc') as $recipient) {
-            $recipientEmail = $recipient->getEmailAddress()->getEmail();
-            if ($recipientEmail !== $this->security->getUser()->getEmail()) {
-                $cc[] = $recipientEmail;
-            }
-        }
-
-        $emailModel->setTo($to);
-        $emailModel->setCc($cc);
+        // Use OroCRM's base EmailModelBuilder to create the reply all model
+        $emailModelBuilder = $this->container->get('Oro\Bundle\EmailBundle\Builder\EmailModelBuilder');
+        $emailModel = $emailModelBuilder->createReplyAllEmailModel($email);
 
         // Check for Nylas origin
         $user = $this->security->getUser();
@@ -268,18 +238,31 @@ class EmailController extends BaseEmailController
     #[Route(
         path: '/forward/{id}',
         name: 'oro_email_email_forward',
-        requirements: ['id' => '\d+'],
-        condition: "request !== null && request.get('_widgetContainer')"
+        requirements: ['id' => '\d+']
     )]
     #[Template('@OroEmail/Email/update.html.twig')]
     #[AclAncestor('oro_email_email_create')]
     public function forwardAction(Email $email)
     {
-        $emailModel = $this->container->get('Oro\Bundle\EmailBundle\Builder\EmailModelBuilder')->createEmailModel();
-        $emailModel->setSubject($this->translator->trans('oro.email.forward_subject', ['%subject%' => $email->getSubject()]));
+        // Test log to see if our controller is being called
+        $this->logger->info('Nylas EmailController forwardAction called', ['email_id' => $email->getId()]);
 
-        // Add original email as attachment or in body
-        $emailModel->setBody($this->prepareForwardBody($email));
+        // Debug: Log the original email subject
+        $this->logger->info('Original email subject', [
+            'email_id' => $email->getId(),
+            'subject' => $email->getSubject()
+        ]);
+
+        // Use OroCRM's base EmailModelBuilder to create the forward model
+        $emailModelBuilder = $this->container->get('Oro\Bundle\EmailBundle\Builder\EmailModelBuilder');
+        $emailModel = $emailModelBuilder->createForwardEmailModel($email);
+
+        // Debug: Log the EmailModel after creation
+        $this->logger->info('EmailModel after createForwardEmailModel', [
+            'subject' => $emailModel->getSubject(),
+            'body' => substr($emailModel->getBody(), 0, 100),
+            'bodyFooter' => substr($emailModel->getBodyFooter(), 0, 100)
+        ]);
 
         // Check for Nylas origin
         $user = $this->security->getUser();
@@ -287,38 +270,6 @@ class EmailController extends BaseEmailController
         $nylasOrigin = $repository->findOneBy(['owner' => $user]);
 
         return parent::process($emailModel);
-    }
-
-    /**
-     * Prepare forward email body.
-     *
-     * @param Email $email The email to prepare body for
-     *
-     * @return string
-     */
-    protected function prepareForwardBody(Email $email): string
-    {
-        $body = "\n\n" . str_repeat('-', 50) . "\n";
-        $body .= "Forwarded Message\n";
-
-        // Get sender information
-        $fromEmailAddress = $email->getFromEmailAddress();
-        $fromEmail = $fromEmailAddress ? $fromEmailAddress->getEmail() : 'Unknown';
-        $fromName = $email->getFromName() ?: $fromEmail;
-
-        $body .= "From: " . $fromName . " <" . $fromEmail . ">\n";
-        $body .= "Date: " . $email->getSentAt()->format('Y-m-d H:i:s') . "\n";
-        $body .= "Subject: " . $email->getSubject() . "\n";
-        $body .= str_repeat('-', 50) . "\n\n";
-
-        $emailBody = $email->getEmailBody();
-        if ($emailBody) {
-            $body .= $emailBody->getBodyContent();
-        } else {
-            $body .= "Email body not available";
-        }
-
-        return $body;
     }
 
     /**

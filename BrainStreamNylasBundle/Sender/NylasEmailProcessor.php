@@ -128,8 +128,8 @@ class NylasEmailProcessor extends EmailModelSender
         $this->emailEntityBuilder = $emailEntityBuilder;
         $this->logger = $logger;
         $this->configService = $configService;
-    }
 
+    }
     /**
      * Enhanced send method with improved Nylas integration.
      *
@@ -501,51 +501,6 @@ class NylasEmailProcessor extends EmailModelSender
 
     /**
      * @param EmailModel $model
-     * @param string     $parentMessageId
-     * @param \DateTime  $messageDate
-     *
-     * @return array
-     */
-    protected function prepareMessage(EmailModel $model, $parentMessageId, $messageDate): array
-    {
-        /** @var array $message */
-        $message = [];
-
-        if ($parentMessageId) {
-            $message['reply_to_message_id'] = $parentMessageId;
-        }
-        $addresses           = $this->getAddresses($model->getFrom());
-        $message['from']     = $addresses;
-        $message['reply_to'] = $addresses;
-        $message['to']       = $this->getAddresses($model->getTo());
-        $message['cc']       = $this->getAddresses($model->getCc());
-        $message['bcc']      = $this->getAddresses($model->getBcc());
-
-        // Ensure the body is UTF-8 encoded
-        $body = mb_convert_encoding($model->getBody(), 'UTF-8', 'auto');
-        if ($body === false) {
-            throw new \Exception('Failed to encode email body to UTF-8');
-        }
-        $message['body'] = $body;
-        //$message['body']     = $model->getBody();
-        //$message['subject']  = $model->getSubject();
-        $message['subject'] = mb_convert_encoding($model->getSubject(), 'UTF-8', 'auto');
-        $message['attachments'] = $this->addEmailAttachments($model);
-        $response     = $this->processEmbeddedImages($message, $model);
-        $message['body'] = $response[0];
-        if (!empty($response[1])) {
-            $inlineAttachments = $response[1];
-            $message['attachments'] = array_merge($message['attachments'], $inlineAttachments);
-        }
-
-        return $message;
-    }
-
-
-    /**
-     * Converts emails addresses to a form acceptable to \Swift_Mime_Message class
-     *
-     * @param string|string[] $addresses Examples of correct email addresses: john@example.com, <john@example.com>,
      *                                   John Smith <john@example.com> or "John Smith" <john@example.com>
      *
      * @return array
