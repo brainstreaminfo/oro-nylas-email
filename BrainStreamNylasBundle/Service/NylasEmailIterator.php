@@ -34,7 +34,6 @@ class NylasEmailIterator implements \Iterator, \Countable
 
     private NylasEmailManager $manager;
 
-    /** @var Email[]|null an array is indexed by underlying iterator keys */
     private ?array $batch = null;
 
     private \Closure $onBatchLoaded;

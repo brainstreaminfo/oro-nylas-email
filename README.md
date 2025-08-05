@@ -2,7 +2,7 @@
 
 ## Overview
 
-The BrainStream Nylas Bundle integrates Nylas email services with OroCRM for seamless email account connection and folder synchronization. This bundle extends OroCRM's email functionality, allowing users to manage Nylas-connected email folders and customize sync preferences via an intuitive interface.
+The oro-nylas-email extension by Brainstream integrates Nylas email services with OroCRM for seamless email account connection and folder synchronization. This bundle extends OroCRM's email functionality, allowing users to manage Nylas-connected email folders and customize sync preferences via an intuitive interface.
 
 ## Features
 
@@ -24,12 +24,12 @@ The BrainStream Nylas Bundle integrates Nylas email services with OroCRM for sea
 Add the bundle to your OroCRM project:
 
 ```bash
-composer require brainstream/nylas-bundle:dev-main
+composer require brainstream/oro-nylas-email:dev-main
 ```
 
 ### 2. Enable the Bundle
 
-Register the bundle in your `config/bundles.php` file:
+Register the bundle in your `config/bundles.php` file incase if its not already there.
 
 ```php
 return [

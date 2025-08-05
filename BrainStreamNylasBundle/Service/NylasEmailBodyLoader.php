@@ -36,13 +36,10 @@ use Oro\Bundle\EmailBundle\Provider\EmailBodyLoaderInterface;
  */
 class NylasEmailBodyLoader implements EmailBodyLoaderInterface
 {
-    /** @var NylasClient */
     private NylasClient $nylasClient;
 
-    /** @var ConfigManager */
     private ConfigManager $configManager;
 
-    /** @var EmailEntityBuilder */
     private EmailEntityBuilder $emailEntityBuilder;
 
     /**

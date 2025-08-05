@@ -32,10 +32,8 @@ class NylasMessageIterator implements \Iterator, \Countable
 {
     private NylasClient $nylasClient;
 
-    /** @var int[]|null */
     private ?array $ids = null;
 
-    /** @var bool using message uids */
     private bool $uidMode = false;
 
     private bool $reverse = false;
@@ -44,7 +42,6 @@ class NylasMessageIterator implements \Iterator, \Countable
 
     private ?\Closure $onBatchLoaded = null;
 
-    /** @var Message[] an array is indexed by the Iterator keys */
     private array $batch = [];
 
     private ?int $iterationMin = null;

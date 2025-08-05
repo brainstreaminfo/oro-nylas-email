@@ -279,7 +279,7 @@ class NylasEmailSynchronizationProcessor extends AbstractEmailSynchronizationPro
             $lastSynchronizedAt->modify("-1 hour");
             $this->logger->info(sprintf('After interval timestamp => %s', $lastSynchronizedAt->getTimestamp()));
             #TODO ref:adbrain comment temporary to retrieve emails, remove below comment later
-            //$emails->setLastSynchronizedAt($lastSynchronizedAt->getTimestamp());
+            $emails->setLastSynchronizedAt($lastSynchronizedAt->getTimestamp());
         }
         $emails->setBatchSize(self::READ_BATCH_SIZE);
         $emails->setConvertErrorCallback(

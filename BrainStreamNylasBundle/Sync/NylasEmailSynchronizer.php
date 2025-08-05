@@ -248,7 +248,7 @@ class NylasEmailSynchronizer extends AbstractEmailSynchronizer
 
         try {
             // TODO ref:adbrain changed for testing purpose only, very IMP revert later SYNC_CODE_SUCCESS to SYNC_CODE_IN_PROCESS!
-            if ($this->changeOriginSyncState($origin, self::SYNC_CODE_SUCCESS)) {
+            if ($this->changeOriginSyncState($origin, self::SYNC_CODE_IN_PROCESS)) {
                 $syncStartTime = $this->getCurrentUtcDateTime();
                 if ($settings) {
                     $processor->setSettings($settings);
