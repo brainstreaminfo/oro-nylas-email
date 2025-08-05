@@ -95,7 +95,7 @@ class FrontController extends AbstractController
                 'verify_host' => false,
                 //'http_version' => '1.1'
             ]
-        ); //'timeout' => 10,'http_version' => '1.1'
+        );
         $this->entityManager = $entityManager;
     }
 
@@ -118,8 +118,7 @@ class FrontController extends AbstractController
                 //'provider' => 'google',//microsoft
             ]
         );
-        //ref:adbrain authurl
-        //echo $authUrl;exit;
+        //ref:adbrain authurl echo $authUrl
 
         return $this->redirect($authUrl);
     }
@@ -169,8 +168,7 @@ class FrontController extends AbstractController
             $emailOrigin = $this->nylasApiService->saveNylasToken($this->userId, $tokenData);
 
             $this->entityManager->flush();
-            //ref:adbrain removed clear as its causing issues
-            //$this->entityManager->clear();
+            //ref:adbrain removed clear($this->entityManager->clear()) as its causing issues
 
             $this->addFlash('success', 'Account connected successfully');
             return $this->redirectToRoute(
@@ -212,7 +210,6 @@ class FrontController extends AbstractController
 
         try {
             //ref:adbrain removed clear as its causing issues
-            //$this->entityManager->clear();
             // Fetch all email origins for the user
             $response = $this->nylasApiService->getAccountInfo($this->userId);
             $emailOrigins = $response['origins'] ?? [];

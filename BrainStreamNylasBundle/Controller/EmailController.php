@@ -244,9 +244,7 @@ class EmailController extends BaseEmailController
     #[AclAncestor('oro_email_email_create')]
     public function forwardAction(Email $email)
     {
-        // Test log to see if our controller is being called
-        //$this->logger->info('Nylas EmailController forwardAction called', ['email_id' => $email->getId()]);
-
+        // Test log to see if our controller is being called 'email_id' => $email->getId()
         // Use OroCRM's base EmailModelBuilder to create the forward model
         $emailModelBuilder = $this->container->get('Oro\Bundle\EmailBundle\Builder\EmailModelBuilder');
         $emailModel = $emailModelBuilder->createForwardEmailModel($email);

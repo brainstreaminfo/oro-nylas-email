@@ -278,7 +278,7 @@ class NylasEmailSynchronizationProcessor extends AbstractEmailSynchronizationPro
             // $lastSynchronizedAt->modify("-" . $this->emailSyncInterval . " minutes");
             $lastSynchronizedAt->modify("-1 hour");
             $this->logger->info(sprintf('After interval timestamp => %s', $lastSynchronizedAt->getTimestamp()));
-            #TODO ref:adbrain comment temporary to retrieve emails, remove below comment later
+            #ref:adbrain comment temporary to retrieve emails, remove below comment later
             $emails->setLastSynchronizedAt($lastSynchronizedAt->getTimestamp());
         }
         $emails->setBatchSize(self::READ_BATCH_SIZE);
@@ -364,7 +364,7 @@ class NylasEmailSynchronizationProcessor extends AbstractEmailSynchronizationPro
 
         foreach ($emails as $email) {
             //$email = $objEmail->getEmail();
-            #TODO remove below contiune, comment for testing
+            #ref:adbrain remove below contiune, comment for testing
             if (!$this->checkOnOldEmailForMailbox($emailFolder, $email, $emailFolder->getOrigin()->getMailbox())) {
                 continue;
             }
@@ -442,7 +442,6 @@ class NylasEmailSynchronizationProcessor extends AbstractEmailSynchronizationPro
 
                 $this->lastEmailSyncDate = $email->getSentAt();
             } catch (\Exception $e) {
-                //dd($e);
                 $this->logger->warning(
                     sprintf(
                         'Failed to persist "%s" (UID: %d) email. Error: %s',
@@ -772,7 +771,7 @@ class NylasEmailSynchronizationProcessor extends AbstractEmailSynchronizationPro
            // $hasAttachment
         );
 
-        //$emailUser->setIsEmailPrivate(false);
+        //$emailUser->setIsEmailPrivate(false) wont work here, its handled from post persist
 
         $emailUser
             ->addFolder($this->getOroEmailFolderObject($folder))

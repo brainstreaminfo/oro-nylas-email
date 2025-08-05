@@ -149,7 +149,6 @@ class EmailSyncCommand extends Command implements CronCommandScheduleDefinitionI
 
         if (!empty($originIds)) {
             $settings = new SynchronizationProcessorSettings($force, $showMessage);
-            //dump($originIds);
             $this->synchronizer->syncOrigins($originIds, $settings);
         } else {
             $this->synchronizer->sync(

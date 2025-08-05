@@ -12,10 +12,8 @@ use Oro\Bundle\ImapBundle\Entity\UserEmailOrigin;
 #[ORM\Entity(repositoryClass: "BrainStream\Bundle\NylasBundle\Entity\Repository\NylasEmailOriginRepository")]
 #[ORM\Table(name: "oro_email_origin")]
 
-class NylasEmailOrigin extends UserEmailOrigin //implements ExtendEntityInterface
+class NylasEmailOrigin extends UserEmailOrigin
 {
-    //use ExtendEntityTrait;
-
     protected $name = 'nylasemailorigin';
 
     #[ORM\Column(name: 'account_id', type: 'string', length: 255, nullable: true)]
@@ -33,14 +31,10 @@ class NylasEmailOrigin extends UserEmailOrigin //implements ExtendEntityInterfac
     #[ORM\Column(name: 'created_at', type: 'datetime', nullable: true)]
     protected $createdAt;
 
-    private $logger;
-
     public function __construct()
     {
         parent::__construct();
         $this->name = 'nylasemailorigin';
-        // $this->setCreatedAt(new \DateTime());
-        // $this->setVerifyMassEmail(0);
     }
 
     public function getAccountId()
