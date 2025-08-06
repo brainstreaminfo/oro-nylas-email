@@ -7,7 +7,7 @@
  *
  * @category BrainStream
  * @package  BrainStream\Bundle\NylasBundle\Command\Cron
- * @author   BrainStream Team
+ * @author   BrainStream Team <info@brainstream.tech>
  * @license  MIT https://opensource.org/licenses/MIT
  * @link     https://github.com/brainstreaminfo/oro-nylas-email
  */
@@ -16,13 +16,14 @@ namespace BrainStream\Bundle\NylasBundle\Command\Cron;
 
 use Doctrine\ORM\EntityManager;
 use Oro\Bundle\BatchBundle\ORM\Query\BufferedQueryResultIterator;
-use Oro\Bundle\CronBundle\Command\CronCommandInterface;
+use Oro\Bundle\CronBundle\Command\CronCommandScheduleDefinitionInterface;
 use Oro\Bundle\EmailBundle\Entity\EmailBody;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * Remove Email Body Command.
@@ -31,19 +32,30 @@ use Symfony\Component\Console\Output\OutputInterface;
  *
  * @category BrainStream
  * @package  BrainStream\Bundle\NylasBundle\Command\Cron
- * @author   BrainStream Team
+ * @author   BrainStream Team <info@brainstream.tech>
  * @license  MIT https://opensource.org/licenses/MIT
  * @link     https://github.com/brainstreaminfo/oro-nylas-email
  */
-class RemoveEmailBodyCommand extends ContainerAwareCommand implements CronCommandInterface
+class RemoveEmailBodyCommand extends Command implements CronCommandScheduleDefinitionInterface
 {
-    public const NAME = 'oro:cron:email-body-purge';
-
     public const LAST_NUMBER_OF_DAYS = 'days';
 
     public const LAST_NUMBER_OF_DAYS_DEFAULT = 7;
 
     public const LIMIT = 100;
+
+    private ManagerRegistry $doctrine;
+
+    /**
+     * Constructor for RemoveEmailBodyCommand.
+     *
+     * @param ManagerRegistry $doctrine The doctrine registry
+     */
+    public function __construct(ManagerRegistry $doctrine)
+    {
+        parent::__construct('oro:cron:email-body-purge');
+        $this->doctrine = $doctrine;
+    }
 
     /**
      * Configure the command.
@@ -53,7 +65,6 @@ class RemoveEmailBodyCommand extends ContainerAwareCommand implements CronComman
     protected function configure(): void
     {
         $this
-            ->setName(static::NAME)
             ->setDescription('Purges emails body & attachments')
             ->addOption(
                 static::LAST_NUMBER_OF_DAYS,
@@ -80,7 +91,7 @@ class RemoveEmailBodyCommand extends ContainerAwareCommand implements CronComman
 
         $count = count($emailBodys);
         if ($count) {
-            $em = $this->getEntityManager();
+            $em = $this->getManager();
             $progress = new ProgressBar($output, $count);
             $progress->setFormat('debug');
 
@@ -94,7 +105,7 @@ class RemoveEmailBodyCommand extends ContainerAwareCommand implements CronComman
             $output->writeln('No emails body to purify.');
         }
 
-        return self::SUCCESS;
+        return Command::SUCCESS;
     }
 
     /**
@@ -138,7 +149,7 @@ class RemoveEmailBodyCommand extends ContainerAwareCommand implements CronComman
      */
     protected function getEmailBody(int $days): BufferedQueryResultIterator
     {
-        $em = $this->getEntityManager();
+        $em = $this->getManager();
         $qb = $em->createQuery("SELECT eb FROM OroEmailBundle:EmailBody eb WHERE eb.created < :oldDate")
                  ->setParameter('oldDate', date('Y-m-d H:i:s', strtotime('-' . $days . ' Days')));
 
@@ -159,8 +170,8 @@ class RemoveEmailBodyCommand extends ContainerAwareCommand implements CronComman
      *
      * @return EntityManager
      */
-    protected function getEntityManager(): EntityManager
+    protected function getManager(): EntityManager
     {
-        return $this->getContainer()->get('doctrine')->getEntityManager();
+        return $this->doctrine->getManager();
     }
 }

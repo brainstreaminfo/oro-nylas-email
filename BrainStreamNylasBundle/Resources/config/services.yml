@@ -47,6 +47,12 @@ services:
       - { name: console.command }
       - { name: oro.cron.command }
 
+  BrainStream\Bundle\NylasBundle\Command\Cron\RemoveEmailBodyCommand:
+    autowire: true
+    tags:
+      - { name: console.command }
+      - { name: oro.cron.command }
+
   BrainStream\Bundle\NylasBundle\Sync\NylasEmailSynchronizer:
     arguments:
       - "@doctrine"
