@@ -128,8 +128,8 @@ class NylasEmailProcessor extends EmailModelSender
         $this->emailEntityBuilder = $emailEntityBuilder;
         $this->logger = $logger;
         $this->configService = $configService;
-
     }
+
     /**
      * Enhanced send method with improved Nylas integration.
      *
@@ -243,22 +243,12 @@ class NylasEmailProcessor extends EmailModelSender
                     'max_duration' => 60,
                     'verify_peer' => false,
                     'verify_host' => false,
-                    'http_version' => '1.1'
+                    //'http_version' => '1.1'
                 ]
             );
 
             $grantId = $this->nylasClient->nylasClient->Options->getGrantId();
             $apiKey = $this->nylasClient->nylasClient->Options->getApiKey();
-
-            // Debug: Log the message payload
-            $this->logger->info(
-                'Nylas API request payload',
-                [
-                    'grant_id' => $grantId,
-                    'message_payload' => $message,
-                    'api_url' => $this->configService->getApiUrl() . "/v3/grants/$grantId/messages/send"
-                ]
-            );
 
             // Validate required fields for Nylas API v3
             $requiredFields = ['from', 'to', 'subject', 'body', 'type'];
@@ -285,14 +275,6 @@ class NylasEmailProcessor extends EmailModelSender
             $response = $client->request('POST', $this->configService->getApiUrl() . "/v3/grants/$grantId/messages/send", $defaultOptions);
             $responseData = $response->toArray();
 
-            // Log the response for debugging
-            $this->logger->info(
-                'Nylas API response',
-                [
-                    'status_code' => $response->getStatusCode(),
-                    'response_data' => $responseData
-                ]
-            );
 
             return $responseData;
 
@@ -387,7 +369,13 @@ class NylasEmailProcessor extends EmailModelSender
         return $message;
     }
 
-    //ref:adbrain added to support existing code, taken from processor class of old oro
+    /**
+     * ref:adbrain added to support existing code, taken from processor class of old oro
+     *
+     * @param EmailModel $model
+     * @param Email $email
+     * @return void
+     */
     protected function persistAttachments(EmailModel $model, Email $email)
     {
         /** @var EmailAttachmentModel $emailAttachmentModel */
@@ -473,20 +461,11 @@ class NylasEmailProcessor extends EmailModelSender
                 'max_duration' => 60,
                 'verify_peer' => false,
                 'verify_host' => false,
-                'http_version' => '1.1'
+                //'http_version' => '1.1'
             ]);
             $response = $client->request('POST', $this->configService->getApiUrl() . "/v3/grants/$grantId/messages/send", $defaultOptions);
             $responseData = $response->toArray();
         } catch (\Exception $e) {
-            /*ob_start();
-            dump($e);
-            $dumpOutput = ob_get_clean();
-            file_put_contents(
-                '/home/brainstream/workspace/orocrm6_default/var/logs/nylas_error1.log',
-                "Error: " . $dumpOutput . "\n",
-                FILE_APPEND
-            );
-            throw $e;*/
             $this->logger->error('Failed to send email via Nylas', [
                 'error' => $e->getMessage(),
                 'code' => $e->getCode(),
@@ -494,14 +473,12 @@ class NylasEmailProcessor extends EmailModelSender
                 'line' => $e->getLine(),
                 'grant_id' => $grantId,
             ]);
-            //$this->logger->error('Nylas API request failed', ['error' => $e->getMessage(), 'grant_id' => $grantId]);
         }
         return $responseData;
     }
 
     /**
      * @param EmailModel $model
-     *                                   John Smith <john@example.com> or "John Smith" <john@example.com>
      *
      * @return array
      * @throws \InvalidArgumentException
@@ -540,13 +517,10 @@ class NylasEmailProcessor extends EmailModelSender
     public function processEmbeddedImages(&$message, EmailModel $model = null)
     {
         if ($model->getType() !== 'html') {
-            //return [];
             return [$message['body'], []];
         }
         $fileArray = [];
-        //$message['file_ids'] = [];
-        //ref:adbrain mime guess way changed
-        //$guesser = ExtensionGuesser::getInstance();
+        //ref:adbrain mime guess way changed $guesser = ExtensionGuesser::getInstance() wont work
         $guesser = MimeTypes::getDefault();
         $body    = preg_replace_callback(
             '/<img(.*)src(\s*)=(\s*)["\'](.*)["\']/U',
@@ -610,14 +584,12 @@ class NylasEmailProcessor extends EmailModelSender
             $message['body']
         );
 
-        // Base64-encode the content of inline attachments
+        // Base64-encode the content of inline attachments if needed
        /* foreach ($fileArray as &$attachment) {
             if (isset($attachment['content'])) {
                 $attachment['content'] = base64_encode($attachment['content']);
             }
         }*/
-        //dump($body);
-        //dump($fileArray);
 
         return [$body, $fileArray];
     }
@@ -655,7 +627,6 @@ class NylasEmailProcessor extends EmailModelSender
                 'content_type' => $contentType,
                 'size' => $contentSize // Add the size field
             ];
-            //$fileAttachmentArray[$attachment->getFileName()] = $attachment;
         }
         return $fileArray;
     }
@@ -692,7 +663,7 @@ class NylasEmailProcessor extends EmailModelSender
             $emailUser->setOrigin($origin);
             if ($origin instanceof UserEmailOrigin) {
                 if ($origin->getMailbox() !== null) {
-//                    $emailUser->setOwner(null);
+                    //$emailUser->setOwner(null);
                     $emailUser->setMailboxOwner($origin->getMailbox());
                 }
             }
@@ -731,14 +702,9 @@ class NylasEmailProcessor extends EmailModelSender
         );
         $emailUser->getEmail()->setXThreadId($message['data']['thread_id']);
         $emailUser->getEmail()->setMessageId($messageHeaderId);
-
-        // ref:adbrain Enable or disable email tracking for any email
-        /*$emailTracking = ($model->hasEnableTracking())?1:0;
-        $emailUser->getEmail()->setEnableTracking($emailTracking);*/
-
         $emailUser->setSeen(true);
         $emailUser->getEmail()->setUid($messageId);
-        //$emailUser->getEmail()->setEmailIp($this->getIpAddr());//ref:adbrain ip not found
+
         if (isset($message['data']['attachments']) && count($message['data']['attachments']) > 0) {
             $emailUser->getEmail()->setHasAttachments(1);
         }
@@ -752,6 +718,11 @@ class NylasEmailProcessor extends EmailModelSender
         return $emailUser;
     }
 
+    /**
+     * Get IP address
+     *
+     * @return void
+     */
     private function getIpAddr()
     {
         if (!empty($_SERVER['HTTP_CLIENT_IP'])){
