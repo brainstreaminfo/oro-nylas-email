@@ -7,7 +7,7 @@
  *
  * @category BrainStream
  * @package  BrainStream\Bundle\NylasBundle\Service
- * @author   BrainStream Team
+ * @author   BrainStream Team <info@brainstream.tech>
  * @license  MIT https://opensource.org/licenses/MIT
  * @link     https://github.com/brainstreaminfo/oro-nylas-email
  */
@@ -24,7 +24,7 @@ use Oro\Bundle\ImapBundle\Mail\Storage\Message;
  *
  * @category BrainStream
  * @package  BrainStream\Bundle\NylasBundle\Service
- * @author   BrainStream Team
+ * @author   BrainStream Team <info@brainstream.tech>
  * @license  MIT https://opensource.org/licenses/MIT
  * @link     https://github.com/brainstreaminfo/oro-nylas-email
  */
@@ -173,7 +173,7 @@ class NylasMessageIterator implements \Iterator, \Countable
                             'in' => $this->emailFolder->getFolderUid(),
                             'limit' => $this->batchSize,
                             'fields' => 'include_headers',
-                            'received_after' => $this->lastSynchronizedAt
+                            'received_after' => $this->lastSynchronizedAt ? $this->lastSynchronizedAt->getTimestamp() : null
                         ]
                     );
                 } catch (\Exception $e) {

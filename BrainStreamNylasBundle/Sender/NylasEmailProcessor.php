@@ -7,7 +7,7 @@
  *
  * @category  BrainStream
  * @package   BrainStream\Bundle\NylasBundle\Sender
- * @author    BrainStream Team
+ * @author    BrainStream Team <info@brainstream.tech>
  * @license   MIT
  * @link      https://github.com/brainstreaminfo/oro-nylas-email
  */
@@ -57,7 +57,7 @@ use BrainStream\Bundle\NylasBundle\Service\ConfigService;
  *
  * @category  BrainStream
  * @package   BrainStream\Bundle\NylasBundle\Sender
- * @author    BrainStream Team
+ * @author    BrainStream Team <info@brainstream.tech>
  * @license   MIT
  * @link      https://github.com/brainstreaminfo/oro-nylas-email
  */
@@ -781,15 +781,6 @@ class NylasEmailProcessor extends EmailModelSender
     protected function getFolder($email, EmailOrigin $origin)
     {
         $folder = $origin->getFolder(FolderType::SENT);
-
-        //ref:adbrain refactored below code as Processor($this->emailOriginHelper) class not found in oro crm 6
-        //In case when 'useremailorigin' origin doesn't have folder, get folder from internal origin
-        /*
-        if (!$folder && $origin instanceof UserEmailOrigin) {
-            $origin = $this->emailOriginHelper->getEmailOrigin($email, $origin->getOwner(), null, InternalEmailOrigin::BAP, false);
-            return $origin->getFolder(FolderType::SENT);
-        }*/
-
         return $folder;
     }
 

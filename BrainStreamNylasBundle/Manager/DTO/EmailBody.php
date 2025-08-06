@@ -7,7 +7,7 @@
  *
  * @category BrainStream
  * @package  BrainStream\Bundle\NylasBundle\Manager\DTO
- * @author   BrainStream Team
+ * @author   BrainStream Team <info@brainstream.tech>
  * @license  MIT https://opensource.org/licenses/MIT
  * @link     https://github.com/brainstreaminfo/oro-nylas-email
  */
@@ -21,7 +21,7 @@ namespace BrainStream\Bundle\NylasBundle\Manager\DTO;
  *
  * @category BrainStream
  * @package  BrainStream\Bundle\NylasBundle\Manager\DTO
- * @author   BrainStream Team
+ * @author   BrainStream Team <info@brainstream.tech>
  * @license  MIT https://opensource.org/licenses/MIT
  * @link     https://github.com/brainstreaminfo/oro-nylas-email
  */

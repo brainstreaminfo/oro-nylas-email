@@ -7,7 +7,7 @@
  *
  * @category BrainStream
  * @package  BrainStream\Bundle\NylasBundle\Controller
- * @author   BrainStream Team
+ * @author   BrainStream Team <info@brainstream.tech>
  * @license  MIT https://opensource.org/licenses/MIT
  * @link     https://github.com/brainstreaminfo/oro-nylas-email
  */
@@ -35,7 +35,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
  *
  * @category BrainStream
  * @package  BrainStream\Bundle\NylasBundle\Controller
- * @author   BrainStream Team
+ * @author   BrainStream Team <info@brainstream.tech>
  * @license  MIT https://opensource.org/licenses/MIT
  * @link     https://github.com/brainstreaminfo/oro-nylas-email
  */

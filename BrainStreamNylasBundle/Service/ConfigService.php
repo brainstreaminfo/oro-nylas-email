@@ -7,7 +7,7 @@
  *
  * @category BrainStream
  * @package  BrainStream\Bundle\NylasBundle\Service
- * @author   BrainStream Team
+ * @author   BrainStream Team <info@brainstream.tech>
  * @license  MIT https://opensource.org/licenses/MIT
  * @link     https://github.com/brainstreaminfo/oro-nylas-email
  */
@@ -23,7 +23,7 @@ use Oro\Bundle\ConfigBundle\Config\ConfigManager;
  *
  * @category BrainStream
  * @package  BrainStream\Bundle\NylasBundle\Service
- * @author   BrainStream Team
+ * @author   BrainStream Team <info@brainstream.tech>
  * @license  MIT https://opensource.org/licenses/MIT
  * @link     https://github.com/brainstreaminfo/oro-nylas-email
  */
@@ -87,8 +87,7 @@ class ConfigService
             $apiUrl = 'https://api.us.nylas.com';
         }
 
-        // Quick test
-        //echo "Region: " . $region . " | API URL: " . $apiUrl; exit;
+        // you can quick test this printing "Region: " . $region . " | API URL: " . $apiUrl; exit;
 
         return $apiUrl;
     }

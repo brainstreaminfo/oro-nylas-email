@@ -7,7 +7,7 @@
  *
  * @category BrainStream
  * @package  BrainStream\Bundle\NylasBundle\Form\Type
- * @author   BrainStream Team
+ * @author   BrainStream Team <info@brainstream.tech>
  * @license  MIT https://opensource.org/licenses/MIT
  * @link     https://github.com/brainstreaminfo/oro-nylas-email
  */
@@ -33,7 +33,7 @@ use Oro\Bundle\EmailBundle\Tools\EmailOriginHelper;
  *
  * @category BrainStream
  * @package  BrainStream\Bundle\NylasBundle\Form\Type
- * @author   BrainStream Team
+ * @author   BrainStream Team <info@brainstream.tech>
  * @license  MIT https://opensource.org/licenses/MIT
  * @link     https://github.com/brainstreaminfo/oro-nylas-email
  */
@@ -88,8 +88,9 @@ class EmailOriginFromType extends BaseEmailOriginFromType
      * Create choices for the form.
      *
      * @return array
+     * @phpstan-ignore-next-line
      */
-    protected function createChoices(): array
+    private function createChoices(): array
     {
         $user = $this->tokenAccessor->getUser();
         if (!$user instanceof User) {
@@ -107,8 +108,9 @@ class EmailOriginFromType extends BaseEmailOriginFromType
      * @param array $origins The origins array
      *
      * @return array
+     * @phpstan-ignore-next-line
      */
-    protected function fillUserOrigins(User $user, array $origins): array
+    private function fillUserOrigins(User $user, array $origins): array
     {
         $origins = [];
         $userOrigins = $user->getEmailOrigins();
@@ -134,8 +136,9 @@ class EmailOriginFromType extends BaseEmailOriginFromType
      * @param array $origins The origins array
      *
      * @return array
+     * @phpstan-ignore-next-line
      */
-    protected function fillMailboxOrigins(User $user, array $origins): array
+    private function fillMailboxOrigins(User $user, array $origins): array
     {
         $mailboxes = $this->mailboxManager->findAvailableMailboxes($user, $this->tokenAccessor->getOrganization());
         // dd($mailboxes);

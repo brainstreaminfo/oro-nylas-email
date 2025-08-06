@@ -7,7 +7,7 @@
  *
  * @category BrainStream
  * @package  BrainStream\Bundle\NylasBundle\Sync
- * @author   BrainStream Team
+ * @author   BrainStream Team <info@brainstream.tech>
  * @license  MIT https://opensource.org/licenses/MIT
  * @link     https://github.com/brainstreaminfo/oro-nylas-email
  */
@@ -51,7 +51,7 @@ use Oro\Bundle\UserBundle\Entity\User;
  *
  * @category BrainStream
  * @package  BrainStream\Bundle\NylasBundle\Sync
- * @author   BrainStream Team
+ * @author   BrainStream Team <info@brainstream.tech>
  * @license  MIT https://opensource.org/licenses/MIT
  * @link     https://github.com/brainstreaminfo/oro-nylas-email
  */
@@ -198,11 +198,6 @@ class NylasEmailSynchronizationProcessor extends AbstractEmailSynchronizationPro
                     break;
                 }
             }
-
-            // run removing of empty outdated folders every N synchronizations
-//            if ($origin->getSyncCount() > 0 && $origin->getSyncCount() % self::CLEANUP_EVERY_N_RUN == 0) {
-//                $this->removeManager->cleanupOutdatedFolders($origin, $this->logger);
-//            }
         }
     }
 
@@ -279,7 +274,7 @@ class NylasEmailSynchronizationProcessor extends AbstractEmailSynchronizationPro
             $lastSynchronizedAt->modify("-1 hour");
             $this->logger->info(sprintf('After interval timestamp => %s', $lastSynchronizedAt->getTimestamp()));
             #ref:adbrain comment temporary to retrieve emails, remove below comment later
-            $emails->setLastSynchronizedAt($lastSynchronizedAt->getTimestamp());
+            $emails->setLastSynchronizedAt($lastSynchronizedAt);
         }
         $emails->setBatchSize(self::READ_BATCH_SIZE);
         $emails->setConvertErrorCallback(
@@ -752,8 +747,6 @@ class NylasEmailSynchronizationProcessor extends AbstractEmailSynchronizationPro
         $isSeen = false,
         $owner = null,
         OrganizationInterface $organization = null,
-        //$uid,
-        //$hasAttachment
     ) {
         $emailUser = $this->emailEntityBuilder->emailUser(
             $email->getSubject(),
@@ -767,8 +760,6 @@ class NylasEmailSynchronizationProcessor extends AbstractEmailSynchronizationPro
             $email->getBccRecipients(),
             $owner,
             $organization,
-           // $uid,
-           // $hasAttachment
         );
 
         //$emailUser->setIsEmailPrivate(false) wont work here, its handled from post persist

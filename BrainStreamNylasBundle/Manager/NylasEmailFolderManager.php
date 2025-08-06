@@ -7,7 +7,7 @@
  *
  * @category BrainStream
  * @package  BrainStream\Bundle\NylasBundle\Manager
- * @author   BrainStream Team
+ * @author   BrainStream Team <info@brainstream.tech>
  * @license  MIT https://opensource.org/licenses/MIT
  * @link     https://github.com/brainstreaminfo/oro-nylas-email
  */
@@ -31,7 +31,7 @@ use BrainStream\Bundle\NylasBundle\Service\NylasClient;
  *
  * @category BrainStream
  * @package  BrainStream\Bundle\NylasBundle\Manager
- * @author   BrainStream Team
+ * @author   BrainStream Team <info@brainstream.tech>
  * @license  MIT https://opensource.org/licenses/MIT
  * @link     https://github.com/brainstreaminfo/oro-nylas-email
  */
@@ -76,17 +76,12 @@ class NylasEmailFolderManager
     {
         // retrieve folders from imap
         $emailFolderModels = $this->client->getFolders(5);
-        //echo 'email folder models';
-        //dump($emailFolderModels);
 
         // transform folders into tree of models, commented as we store top level folders only
         //$emailFolderModels = $this->processFolders($folders);
         if ($this->origin->getId()) {
             // renew existing folders if origin already exists, referesh was causing issues so its removed
             $existingFolders = $this->getExistingFolders();
-            /*echo 'existing folder======';
-            dump($existingFolders);
-            */
 
             // merge synced and existing folders
             $emailFolderModels = $this->mergeFolders($emailFolderModels, $existingFolders);
@@ -159,23 +154,16 @@ class NylasEmailFolderManager
                 $nylasEmailFolder->setName($syncedFolderModel->getEmailFolder()->getName());
                 $nylasEmailFolder->setFullName($syncedFolderModel->getEmailFolder()->getFullName());
                 $nylasEmailFolder->setType($syncedFolderModel->getEmailFolder()->getType());
-                //$syncedFolderModel->getEmailFolder()->setFolderUid($syncedFolderModel->getUidValidity());
                 $this->em->persist($nylasEmailFolder);
             } else {
                 /** @var EmailFolder $existingEmailFolder */
                 $emailFolder = $f->first();
-                //ref:adbrain need to fix refresh gives error, so commented
-                //$this->em->refresh($emailFolder);
                 $emailFolder->setName($syncedFolderModel->getEmailFolder()->getName());
                 $emailFolder->setFullName($syncedFolderModel->getEmailFolder()->getFullName());
                 $syncedFolderModel->setEmailFolder($emailFolder);
                 $existingEmailFolders->removeElement($emailFolder);
                 $emailFolderData = $this->em->getRepository(NylasEmailFolder::class)->find($emailFolder->getId());
-                // dump('new folder data...');
-                // dump($emailFolderData);
-                if (!$emailFolderData) {
-                    //echo 'email folder does not exist========='. $emailFolderData->getName();
-                }
+
                 if ($emailFolderData) {
                     $emailFolderData->setFolderUid($syncedFolderModel->getUidValidity());
                 }
@@ -224,9 +212,6 @@ class NylasEmailFolderManager
      */
     protected function getExistingFolders()
     {
-        //Oro\Bundle\EmailBundle\Entity\EmailFolder
-        //OroEmailBundle:EmailFolder
-
         $qb = $this->em->createQueryBuilder()
             ->select('ef')
             ->from(NylasEmailFolder::class, 'ef')

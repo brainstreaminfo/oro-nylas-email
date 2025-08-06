@@ -13,13 +13,12 @@
   "require": {
     "php": ">=8.0",
     "oro/platform": "^6.1",
-    "brainstream/nylas-php": "dev-master"
+    "brainstream/nylas-php": "^1.0"
   },
   "autoload": {
     "psr-4": {
       "BrainStream\\Bundle\\NylasBundle\\": "BrainStreamNylasBundle/"
     }
   },
-  "minimum-stability": "dev",
   "prefer-stable": true
 }

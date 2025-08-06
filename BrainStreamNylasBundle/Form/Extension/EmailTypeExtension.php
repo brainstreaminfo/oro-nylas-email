@@ -10,7 +10,7 @@
  *
  * @category BrainStream
  * @package  BrainStream\Bundle\NylasBundle\Form\Extension
- * @author   BrainStream Team
+ * @author   BrainStream Team <info@brainstream.tech>
  * @license  MIT https://opensource.org/licenses/MIT
  * @link     https://github.com/brainstreaminfo/oro-nylas-email
  */
@@ -29,7 +29,7 @@ use Doctrine\ORM\EntityManagerInterface;
  *
  * @category BrainStream
  * @package  BrainStream\Bundle\NylasBundle\Form\Extension
- * @author   BrainStream Team
+ * @author   BrainStream Team <info@brainstream.tech>
  * @license  MIT https://opensource.org/licenses/MIT
  * @link     https://github.com/brainstreaminfo/oro-nylas-email
  */

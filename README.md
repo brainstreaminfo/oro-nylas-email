@@ -24,12 +24,12 @@ The oro-nylas-email extension by Brainstream integrates Nylas email services wit
 Add the bundle to your OroCRM project:
 
 ```bash
-composer require brainstream/oro-nylas-email:dev-main
+composer require brainstreaminfo/oro-nylas-email
 ```
 
 ### 2. Enable the Bundle
 
-Register the bundle in your `config/bundles.php` file incase if its not already there.
+Register the bundle in your `config/bundles.php` file incase if it's not already there.
 
 ```php
 return [
@@ -61,7 +61,7 @@ php bin/console cache:warmup --env=prod
 
 1. Log in to the [Nylas Dashboard](https://dashboard.nylas.com) to obtain your Client ID and Client Secret
 2. In OroCRM, navigate to **System > Configuration > Integrations > Nylas Settings**
-3. Enter the Client ID and Client Secret, then save
+3. Enter the Region(US/EU), Client ID and Client Secret, then save
 
 ### 6. Access the Feature
 
@@ -95,7 +95,7 @@ Enable multiple email support in user settings to connect and manage additional 
 
 If synchronization preferences aren't saving:
 
-1. Check `var/logs/dev.log` for error messages
+1. Check symfony logs at 'var/logs/dev.log' for error messages
 2. Verify Nylas credentials are correct
 3. Ensure network access to Nylas API
 4. Review OroCRM configuration settings
@@ -106,7 +106,7 @@ Enable detailed debug logging by configuring `config/packages/dev/monolog.yaml` 
 
 ## Changelog
 
-### Version 1.0.0 (Initial Release - June 2025)
+### Version 1.0.0 (Initial Release - August 2025)
 
 - Added Nylas email integration with OAuth authentication
 - Implemented folder synchronization UI with folderUid support
@@ -121,7 +121,7 @@ This bundle is released under the **MIT License**. See the [LICENSE](LICENSE) fi
 For issues, questions, or feature requests:
 
 - **GitHub Issues**: Open an issue on the GitHub repository
-- **Email Support**: Contact [info@brainstream.tech.](mailto:info@brainstream.tech.)
+- **Email Support**: Contact [info@brainstream.tech](mailto:info@brainstream.tech.)
 
 ## Acknowledgments
 

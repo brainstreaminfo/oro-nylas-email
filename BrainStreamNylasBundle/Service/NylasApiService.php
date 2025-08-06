@@ -7,7 +7,7 @@
  *
  * @category BrainStream
  * @package  BrainStream\Bundle\NylasBundle\Service
- * @author   BrainStream Team
+ * @author   BrainStream Team <info@brainstream.tech>
  * @license  MIT https://opensource.org/licenses/MIT
  * @link     https://github.com/brainstreaminfo/oro-nylas-email
  */
@@ -38,7 +38,7 @@ use Doctrine\Common\Collections\ArrayCollection;
  *
  * @category BrainStream
  * @package  BrainStream\Bundle\NylasBundle\Service
- * @author   BrainStream Team
+ * @author   BrainStream Team <info@brainstream.tech>
  * @license  MIT https://opensource.org/licenses/MIT
  * @link     https://github.com/brainstreaminfo/oro-nylas-email
  */
@@ -141,8 +141,6 @@ class NylasApiService
         $emailOrigin->setTokenType($tokenData['token_type']);
         $emailOrigin->setAccountId($tokenData['grant_id']);
         $emailOrigin->setAccessToken($tokenData['access_token']);
-        //$emailOrigin->setExpiresAt((new \DateTime())->modify("+{$expiresIn} seconds"));
-        //$this->entityManager->getConnection()->getConfiguration()->setSQLLogger(new \Doctrine\DBAL\Logging\EchoSQLLogger());
         $this->entityManager->persist($emailOrigin);
         $this->entityManager->flush();
 
@@ -514,10 +512,6 @@ class NylasApiService
             $emailOrigin->setActive(false);
             $emailOrigin->setIsDefault(false);
         }
-        // $allOrigins = $this->entityManager->getRepository(NylasEmailOrigin::class)->findAll();
-        // foreach ($allOrigins as $origin) {
-        //     $origin->setIsDefault(false);
-        // }
         $this->entityManager->flush();
     }
 }
