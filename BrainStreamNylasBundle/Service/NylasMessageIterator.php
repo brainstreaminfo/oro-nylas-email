@@ -57,10 +57,10 @@ class NylasMessageIterator implements \Iterator, \Countable
     /**
      * Constructor.
      *
-     * @param NylasClient      $nylasClient The Nylas client service
+     * @param NylasClient $nylasClient The Nylas client service
      * @param NylasEmailFolder $emailFolder The email folder
-     * @param int[]|null       $ids         The message IDs
-     * @param bool             $uidMode     Whether using message UIDs
+     * @param int[]|null $ids The message IDs
+     * @param bool $uidMode Whether using message UIDs
      */
     public function __construct(
         NylasClient $nylasClient,
@@ -261,7 +261,7 @@ class NylasMessageIterator implements \Iterator, \Countable
                 $this->nylasClient->nylasClient->Options->getGrantId(),
                 [
                     'in' => $this->emailFolder->getFolderUid(),
-                    'received_after' => $this->lastSynchronizedAt,
+                    'received_after' => $this->lastSynchronizedAt ? $this->lastSynchronizedAt->getTimestamp() : null,
                     'fields' => 'include_headers'
                 ]
             );
