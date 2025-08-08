@@ -66,7 +66,7 @@ class EmailSyncCommand extends Command implements CronCommandScheduleDefinitionI
      */
     public function getDefaultDefinition(): string
     {
-        return '*/1 * * * *'; // Runs every minute
+        return '*/5 * * * *'; // Runs every minute
     }
 
     /**

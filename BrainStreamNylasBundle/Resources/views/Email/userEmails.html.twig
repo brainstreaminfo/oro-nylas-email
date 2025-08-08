@@ -1,4 +1,3 @@
-{# modified ref:adbrain #}
 {% extends '@OroUI/actions/index.html.twig' %}
 {% import '@OroEmail/actions.html.twig' as EmailActions %}
 
@@ -84,22 +83,6 @@
     %}
     {% import '@OroUI/macros.html.twig' as UI %}
 
-    {# ref:adbrain sync link commented
-    <div class="btn-group" {{ UI.renderPageComponentAttributes({
-        view: 'oroemail/js/app/views/email-sync-view',
-        options: {
-            syncPath: path('oro_email_user_sync_emails'),
-            processingMessage: 'oro.email.action.message.processing'|trans,
-            errorHandlerMessage: 'oro.email.action.message.error'|trans,
-            actionProcessing: actionProcessing,
-            actionSync: actionSync
-        }
-    }) }}>
-        <a href="#" role="button" class="btn sync-btn icons-holder-text no-hash" data-role="sync">
-            {{ actionSync|raw }}
-        </a>
-    </div>
-    #}
 {% endblock %}
 
 {% block breadcrumb %}

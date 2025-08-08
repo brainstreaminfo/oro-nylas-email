@@ -427,10 +427,10 @@ class NylasEmailSynchronizationProcessor extends AbstractEmailSynchronizationPro
 
                 $this->logger->info(
                     sprintf(
-                        'The "%s" (UID: %d) email was persisted. Nylas folder id: %d and MsgID %s',
+                        'The "%s" (UID: %s) email was persisted. Nylas folder id: %s and MsgID %s',
                         $email->getSubject(),
-                        $emailUser->getEmail()->getId(),
-                        $email->getId(),
+                        $email->getUid() ?: 'N/A',
+                        $emailFolder->getFolderUid() ?: 'N/A',
                         $email->getMessageId()
                     )
                 );
@@ -439,9 +439,9 @@ class NylasEmailSynchronizationProcessor extends AbstractEmailSynchronizationPro
             } catch (\Exception $e) {
                 $this->logger->warning(
                     sprintf(
-                        'Failed to persist "%s" (UID: %d) email. Error: %s',
+                        'Failed to persist "%s" (UID: %s) email. Error: %s',
                         $email->getSubject(),
-                        $email->getId(),
+                        $email->getUid() ?: "N/A",
                         $e->getMessage()
                     )
                 );
@@ -517,9 +517,9 @@ class NylasEmailSynchronizationProcessor extends AbstractEmailSynchronizationPro
         if ($mailbox && $folder->getSyncStartDate() > $dateForCheck) {
             $this->logger->info(
                 sprintf(
-                    'Skip "%s" (UID: %d) email, because it was sent earlier than the start synchronization is set',
+                    'Skip "%s" (UID: %s) email, because it was sent earlier than the start synchronization is set',
                     $email->getSubject(),
-                    $email->getMessageId()
+                    $email->getUid() ?: "N/A"
                 )
             );
 
@@ -571,13 +571,13 @@ class NylasEmailSynchronizationProcessor extends AbstractEmailSynchronizationPro
 
         $skipSync = false;
         if ($existsSavedEmail && $existEmailUser) {
-            $msg      = 'Skip "%s" (UID: %d) email, because it is already synchronised.';
+            $msg      = 'Skip "%s" (UID: %s) email, because it is already synchronised.';
             $skipSync = true;
 
             if ($this->getSettings()->isForceMode()) {
                 $msg = null;
                 if ($this->getSettings()->needShowMessage()) {
-                    $msg = 'Sync "%s" (UID: %d) email, because force mode is enabled. ';
+                    $msg = 'Sync "%s" (UID: %s) email, because force mode is enabled. ';
                 }
 
                 $skipSync = false;
@@ -588,7 +588,7 @@ class NylasEmailSynchronizationProcessor extends AbstractEmailSynchronizationPro
                     sprintf(
                         $msg,
                         $email->getSubject(),
-                        $email->getId()
+                        $email->getUid() ?: "N/A"
                     )
                 );
             }
